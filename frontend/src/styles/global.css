@@ -1,0 +1,43 @@
+@import "./tokens.css";
+@import "./reset.css";
+@import "./base.css";
+@import "./layout.css";
+@import "./editorial.css";
+
+#root {
+  min-height: 100vh;
+}
+
+.skip-link {
+  position: absolute;
+  z-index: 80;
+  top: 8px;
+  right: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--navy);
+  color: #fff;
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+button.scrim {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}

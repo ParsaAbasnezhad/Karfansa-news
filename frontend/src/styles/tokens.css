@@ -1,0 +1,51 @@
+/* Design tokens: colors, shadows and fonts for the light site theme. */
+:root {
+  --navy: #142b43;
+  --navy-2: #203c56;
+  --blue: #275c79;
+  --blue-hover: #1c4964;
+  --blue-soft: #e8eff3;
+  --blue-tint: #f4f7f8;
+  --teal: #38776c;
+  --teal-soft: #e5f5f2;
+  --bg: #f5f6f5;
+  --surface: #ffffff;
+  --surface-2: #f6f8fd;
+  --line: #dfe4e5;
+  --fg: #172b3a;
+  --fg-soft: #465965;
+  --muted: #64747d;
+  --red: #d6282f;
+  --up: #13935b;
+  --up-bg: #e3f6ec;
+  --down: #d6282f;
+  --down-bg: #fde8e9;
+  --shadow: 0 1px 3px rgba(20, 43, 67, 0.06), 0 8px 20px rgba(20, 43, 67, 0.05);
+  --chip: #f0f3fa;
+  --font: 'Vazirmatn Variable', 'Vazirmatn', Tahoma, 'Segoe UI', sans-serif;
+  --latin: 'Montserrat', 'Vazirmatn', sans-serif;
+  --r: 16px;
+  color-scheme: light;
+
+  /* Aliases used by the app shell and shared UI primitives. */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--fg);
+  --color-text-muted: var(--muted);
+  --color-border: var(--line);
+  --color-primary: var(--blue);
+  --color-primary-contrast: #fff;
+  --color-danger: var(--red);
+  --color-success: var(--up);
+  --font-sans: var(--font);
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --text-sm: 0.875rem;
+  --text-base: 15px;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --space-2: 8px;
+  --space-4: 16px;
+  --space-8: 32px;
+  --radius-md: 12px;
+  --container-max: 1200px;
+}

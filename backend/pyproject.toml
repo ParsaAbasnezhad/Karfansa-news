@@ -1,0 +1,69 @@
+[project]
+name = "karfansa-news-backend"
+version = "0.1.0"
+description = "Karfansa News backend (Django modular monolith)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "argon2-cffi>=25.1.0",
+    "celery>=5.7.0",
+    "django>=5.2,<5.3",
+    "django-celery-beat>=2.9.0",
+    "django-environ>=0.14.0",
+    "django-ninja>=1.8.0",
+    "django-redis>=7.0.0",
+    "feedparser>=6.0.14",
+    "gunicorn>=27.0.0",
+    "psycopg[binary]>=3.3.9",
+    "redis>=8.1.0",
+    "requests>=2.32",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "django-stubs>=6.1.2",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "pytest-django>=4.14.0",
+    "ruff>=0.17.4",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.development"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "S", "DJ", "C4", "SIM", "RUF"]
+ignore = ["RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["mypy_django_plugin.main"]
+exclude = ["migrations/", "tests/"]
+
+[[tool.mypy.overrides]]
+module = ["django_celery_beat.*", "environ.*", "celery.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.development"
+
+[[tool.mypy.overrides]]
+module = ["apps.core.tasks"]
+disallow_untyped_decorators = false
