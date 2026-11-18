@@ -11,6 +11,8 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 backend/staticfiles/
+backend/media/
+*.sqlite3
 
 # Node
 node_modules/

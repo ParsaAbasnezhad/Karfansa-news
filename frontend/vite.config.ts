@@ -19,6 +19,14 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_PROXY_TARGET ?? "http://localhost:8000",
           changeOrigin: true,
         },
+        "/media": {
+          target: env.VITE_PROXY_TARGET ?? "http://localhost:8000",
+          changeOrigin: true,
+        },
+        "/sitemap.xml": {
+          target: env.VITE_PROXY_TARGET ?? "http://localhost:8000",
+          changeOrigin: false,
+        },
       },
     },
     test: {

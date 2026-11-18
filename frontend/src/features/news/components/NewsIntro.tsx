@@ -2,6 +2,7 @@ import { formatNumber, formatShortDate } from "@/lib/format";
 
 interface NewsIntroProps {
   titleId: string;
+  headingLevel?: "h1" | "h2";
   eyebrow: string;
   title: string;
   description: string;
@@ -13,6 +14,7 @@ interface NewsIntroProps {
 
 export function NewsIntro({
   titleId,
+  headingLevel = "h1",
   eyebrow,
   title,
   description,
@@ -21,6 +23,7 @@ export function NewsIntro({
   failed = false,
   count = null,
 }: NewsIntroProps) {
+  const Heading = headingLevel;
   const stamp = updatedAt ? formatShortDate(updatedAt) : "";
   let status = "در انتظار به‌روزرسانی";
   if (failed) status = "به‌روزرسانی ناموفق";
@@ -34,7 +37,7 @@ export function NewsIntro({
           <span className={refreshing ? "news-live-dot is-busy" : "news-live-dot"} />
           {eyebrow}
         </span>
-        <h1 id={titleId}>{title}</h1>
+        <Heading id={titleId}>{title}</Heading>
         <p>{description}</p>
       </div>
       <div className="news-mast-aside">

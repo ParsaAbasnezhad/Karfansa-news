@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<main dir="rtl" style="max-width:78ch;margin:2rem auto;padding:1rem;line-height:2;color:var(--body-fg,#202020)">
+  <p style="font-weight:700;color:#a23d24">پیش‌نمایش داخلی · این خبر در این صفحه عمومی منتشر نشده است</p>
+  <p>{{ article.category.name|default:"اخبار اختصاصی" }} · {{ article.get_status_display }}{% if article.published_at %} · {{ article.published_at }}{% endif %}</p>
+  <h1 style="font-size:clamp(2rem,4vw,3.4rem);line-height:1.4">{{ article.title }}</h1>
+  <p style="font-size:1.25rem;font-weight:600">{{ article.summary }}</p>
+  {% if article.featured_image %}<img src="{{ article.featured_image.url }}" alt="" style="width:100%;height:auto;aspect-ratio:16/9;object-fit:cover">{% endif %}
+  <article style="font-size:1.1rem;overflow-wrap:anywhere">{{ safe_content|safe }}</article>
+  {% for image in article.gallery.all %}<figure><img src="{{ image.image.url }}" alt="{{ image.alt_text }}" style="width:100%;height:auto"><figcaption>{{ image.caption }}</figcaption></figure>{% endfor %}
+</main>
+{% endblock %}

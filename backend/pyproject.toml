@@ -13,6 +13,7 @@ dependencies = [
     "django-redis>=7.0.0",
     "feedparser>=6.0.14",
     "gunicorn>=27.0.0",
+    "pillow>=11.0.0",
     "psycopg[binary]>=3.3.9",
     "redis>=8.1.0",
     "requests>=2.32",
@@ -31,7 +32,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings.development"
+DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"

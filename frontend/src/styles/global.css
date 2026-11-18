@@ -3,6 +3,8 @@
 @import "./base.css";
 @import "./layout.css";
 @import "./editorial.css";
+@import "../features/auth/auth.css";
+@import "../features/profile/profile.css";
 
 #root {
   min-height: 100vh;

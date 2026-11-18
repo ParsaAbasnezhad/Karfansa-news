@@ -7,3 +7,6 @@ globals().update({name: value for name, value in vars(base).items() if name.isup
 
 DEBUG = True
 ALLOWED_HOSTS = base.env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "backend"])
+EMAIL_BACKEND = base.env(
+    "DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
+)

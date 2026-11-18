@@ -1,6 +1,9 @@
 import { Link } from "react-router";
 
 import { Icon } from "@/components/ui/Icon";
+import { AdSlider } from "@/features/advertising/components/AdSlider";
+import { EditorialHomeSections } from "@/features/editorial/components/EditorialHomeSections";
+import { useEditorialFeatured, useEditorialLatest } from "@/features/editorial/hooks/use-editorial";
 import { newsErrorMessage, publishedStamp } from "@/features/news/api/messages";
 import { NewsImage } from "@/features/news/components/NewsImage";
 import { NewsIntro } from "@/features/news/components/NewsIntro";
@@ -36,38 +39,104 @@ function RailStory({ item }: { item: NewsItem }) {
   );
 }
 
+function comparableUrl(value: string): string {
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    url.hash = "";
+    url.pathname = url.pathname.replace(/\/+$/, "") || "/";
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.startsWith("utm_") || key === "fbclid" || key === "gclid") {
+        url.searchParams.delete(key);
+      }
+    }
+    url.searchParams.sort();
+    return url.toString();
+  } catch {
+    return value.trim();
+  }
+}
+
+function comparableTitle(value: string): string {
+  return value
+    .normalize("NFKC")
+    .toLocaleLowerCase("fa")
+    .replace(/[\u064b-\u065f\u0670\u200c\u200d]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
 export function NewsHomePage() {
   const headlines = useHeadlines();
+  const editorialFeatured = useEditorialFeatured();
+  const editorialLatest = useEditorialLatest();
   usePageMeta(
-    "اخبار اقتصاد و کسب‌وکار | کارفنسا نیوز",
-    "آخرین خبرهای اقتصاد، بازار و کسب‌وکار از منابع معتبر در کارفنسا نیوز.",
+    "اخبار اختصاصی اقتصاد و کسب‌وکار | کارفنسا نیوز",
+    "خبرها و گزارش‌های اختصاصی تحریریهٔ کارفنسا، در کنار تازه‌های اقتصاد و بازار از منابع معتبر.",
   );
 
-  const featured = headlines.data?.featured ?? null;
+  const editorialArticles = [
+    editorialFeatured.data?.featured,
+    ...(editorialFeatured.data?.secondary ?? []),
+    ...(editorialLatest.data?.results ?? []),
+  ].filter((article) => article != null);
+  const editorialUrls = new Set(
+    editorialArticles.map((article) => comparableUrl(article.source_url)).filter(Boolean),
+  );
+  const editorialTitles = new Set(
+    editorialArticles
+      .map((article) => comparableTitle(article.title))
+      .filter((title) => title.length >= 18),
+  );
+  const isEditorialDuplicate = (item: NewsItem) =>
+    editorialUrls.has(comparableUrl(item.original_url)) ||
+    editorialTitles.has(comparableTitle(item.title));
+
+  const featured =
+    [
+      headlines.data?.featured,
+      ...(headlines.data?.minis ?? []),
+      ...(headlines.data?.highlights ?? []),
+      ...(headlines.data?.latest ?? []),
+      ...(headlines.data?.sections.flatMap((section) => section.items) ?? []),
+    ].find((item) => item && !isEditorialDuplicate(item)) ?? null;
   const minis = (headlines.data?.minis ?? [])
-    .filter((item) => item.id !== featured?.id)
+    .filter((item) => item.id !== featured?.id && !isEditorialDuplicate(item))
     .slice(0, 3);
   const highlights = (headlines.data?.highlights ?? []).filter(
-    (item) => item.id !== featured?.id && !minis.some((mini) => mini.id === item.id),
+    (item) =>
+      !isEditorialDuplicate(item) &&
+      item.id !== featured?.id &&
+      !minis.some((mini) => mini.id === item.id),
   );
   const latest = (headlines.data?.latest ?? [])
-    .filter((item) => item.id !== featured?.id)
+    .filter((item) => item.id !== featured?.id && !isEditorialDuplicate(item))
     .slice(0, 8);
-  const sections = headlines.data?.sections ?? [];
+  const sections = (headlines.data?.sections ?? []).map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !isEditorialDuplicate(item)),
+  }));
   const sidebar = [...(headlines.data?.pinned ?? []), ...highlights, ...minis, ...latest]
     .filter(
       (item, index, items) =>
-        item.id !== featured?.id && items.findIndex((other) => other.id === item.id) === index,
+        !isEditorialDuplicate(item) &&
+        item.id !== featured?.id &&
+        items.findIndex((other) => other.id === item.id) === index,
     )
     .slice(0, 6);
 
   return (
-    <section className="news-page news-home" aria-labelledby="home-title">
+    <div className="news-page news-home">
+      <EditorialHomeSections />
+
+      <AdSlider />
+
       <NewsIntro
         titleId="home-title"
-        eyebrow="کارفنسا نیوز"
-        title="نبض اقتصاد و کسب‌وکار"
-        description="رویدادهای مهم، تازه‌ترین خبرها و موضوعات اثرگذار در یک نگاه."
+        headingLevel="h2"
+        eyebrow="اخبار گردآوری‌شده"
+        title="تازه‌های اقتصاد و کسب‌وکار"
+        description="خبرهای منتخب از منابع معتبر، جدا از گزارش‌ها و خبرهای اختصاصی کارفنسا."
         updatedAt={headlines.data?.updated_at ?? null}
         refreshing={headlines.isFetching}
         failed={headlines.isError}
@@ -110,7 +179,7 @@ export function NewsHomePage() {
                       to={`/news/${featured.id}`}
                       aria-label={featured.title}
                     >
-                      <NewsImage className="news-cover" src={featured.image_url} alt="" priority />
+                      <NewsImage className="news-cover" src={featured.image_url} alt="" />
                     </Link>
                     <div className="news-feature-copy">
                       <span className="news-kicker">{featured.topic || "خبر شاخص"}</span>
@@ -140,7 +209,7 @@ export function NewsHomePage() {
               ) : null}
 
               {highlights.length > 0 ? (
-                <section className="news-section" aria-labelledby="highlights-title">
+                <section className="news-section news-home-highlights" aria-labelledby="highlights-title">
                   <div className="news-section-head">
                     <h2 id="highlights-title">خبرهای مهم</h2>
                   </div>
@@ -152,7 +221,7 @@ export function NewsHomePage() {
                 </section>
               ) : null}
 
-              <section className="news-section" aria-labelledby="latest-title">
+              <section className="news-section news-home-latest" aria-labelledby="latest-title">
                 <div className="news-section-head">
                   <h2 id="latest-title">تازه‌ترین خبرها</h2>
                   <Link to="/news">
@@ -225,6 +294,6 @@ export function NewsHomePage() {
           )}
         </>
       )}
-    </section>
+    </div>
   );
 }

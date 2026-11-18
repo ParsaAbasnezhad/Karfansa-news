@@ -55,7 +55,7 @@ function validate(values: ContactPayload): ContactErrors {
   return errors;
 }
 
-export function ContactForm() {
+export function ContactForm({ privacyNote }: { privacyNote?: string } = {}) {
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<ContactErrors>({});
   const mutation = useContactMutation();
@@ -208,11 +208,21 @@ export function ContactForm() {
         </p>
       ) : null}
       <button type="submit" className="contact-submit" disabled={mutation.isPending}>
-        {mutation.isPending ? "در حال ارسال…" : "ارسال پیام"}
-        {mutation.isPending ? null : <Icon name="arrow" />}
+        {mutation.isPending ? (
+          <>
+            <span className="contact-spinner" aria-hidden="true" />
+            در حال ارسال…
+          </>
+        ) : (
+          <>
+            ارسال پیام
+            <Icon name="send" />
+          </>
+        )}
       </button>
       <p className="contact-privacy-note">
-        پیام فقط برای بررسی تحریریه ذخیره می‌شود و در همین سرویس می‌ماند.
+        {privacyNote?.trim() ||
+          "پیام فقط برای بررسی تحریریه ذخیره می‌شود و در همین سرویس می‌ماند."}
       </p>
     </form>
   );

@@ -6,11 +6,15 @@ from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI, Router, Status
 from ninja.errors import ValidationError
 
+from apps.advertising.api import router as advertising_router
 from apps.common.exceptions import AppError
 from apps.contact.api import router as contact_router
 from apps.core import health
 from apps.core.schemas import HealthOut
+from apps.editorial.api import router as editorial_router
 from apps.news.api import router as news_router
+from apps.pages.api import router as pages_router
+from apps.users.api import router as auth_router
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,11 @@ def health_check(request: HttpRequest) -> Status[HealthOut]:
 
 api.add_router("", system_router)
 api.add_router("/news", news_router, tags=["news"])
+api.add_router("/editorial", editorial_router, tags=["editorial"])
 api.add_router("/contact", contact_router, tags=["contact"])
+api.add_router("/auth", auth_router, tags=["auth"])
+api.add_router("/advertising", advertising_router, tags=["advertising"])
+api.add_router("/pages", pages_router, tags=["pages"])
 
 
 def _error_response(

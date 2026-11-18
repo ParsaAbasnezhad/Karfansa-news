@@ -3,11 +3,13 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
 import { Icon } from "@/components/ui/Icon";
 import { useHeadlines } from "@/features/news/hooks/use-news";
+import { useSession } from "@/features/auth/session";
 
 const LOGO = "/KARFANSA%20%E2%80%94%20Logo.svg";
 
 const NAV = [
   { to: "/", label: "صفحهٔ اصلی", end: true },
+  { to: "/editorial", label: "اخبار اختصاصی", end: false },
   { to: "/news", label: "اخبار", end: false },
   { to: "/about", label: "درباره", end: true },
   { to: "/contact", label: "تماس", end: true },
@@ -17,6 +19,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const headlines = useHeadlines();
+  const { user } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -114,6 +117,13 @@ export function AppLayout() {
             </button>
           </form>
           <div className="mast-tools">
+            <Link
+              className="auth-nav-link"
+              to={user ? "/account" : "/login"}
+              onClick={closeOverlays}
+            >
+              {user ? "حساب من" : "ورود / ثبت‌نام"}
+            </Link>
             <button
               type="button"
               className="sbtn iconbtn"
@@ -156,7 +166,7 @@ export function AppLayout() {
         </div>
       </nav>
 
-      {ticker.length > 0 ? (
+      {pathname !== "/" && !pathname.startsWith("/editorial") && ticker.length > 0 ? (
         <div className="ticker">
           <div className="wrap">
             <span className="label">
