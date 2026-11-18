@@ -11,6 +11,7 @@ from django.db.models import F
 from django.http import HttpRequest
 from ninja import Query, Router
 
+from apps.common.client_ip import client_ip
 from apps.common.exceptions import AppError, NotFoundError
 
 from . import selectors
@@ -100,7 +101,7 @@ def _record_view(request: HttpRequest, item: EditorialArticle) -> None:
     identity = (
         f"user:{request.user.pk}"
         if request.user.is_authenticated
-        else f"{request.META.get('REMOTE_ADDR', '')}:{agent[:200]}"
+        else f"{client_ip(request)}:{agent[:200]}"
     )
     digest = hashlib.sha256(
         f"{item.pk}:{item.created_at.isoformat()}:{identity}".encode()

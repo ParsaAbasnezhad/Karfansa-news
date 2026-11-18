@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ code }} — {{ title }} | کارفانسا نیوز</title>
+  <style>
+    :root { color-scheme: light; font-family: Tahoma, sans-serif; background: #f6f5f1; color: #1f2933; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
+    main { width: min(100% - 2rem, 680px); margin: 3rem auto; padding: clamp(2rem, 6vw, 4rem); background: white; border: 1px solid #e5e2dc; border-radius: 18px; box-shadow: 0 20px 60px #1f29330d; }
+    .masthead { display: flex; align-items: center; gap: .75rem; font-weight: 800; color: #9c292e; letter-spacing: -.03em; }
+    .masthead::before { content: ''; display: block; width: 30px; height: 30px; background: repeating-linear-gradient(0deg, #9c292e 0 3px, transparent 3px 7px); border: 2px solid #9c292e; border-radius: 3px; }
+    .rule { height: 4px; margin: 1.5rem 0 2rem; background: linear-gradient(to left, #9c292e 0 80px, #dedbd4 80px 100%); }
+    .folio { display: block; color: #9c292e; font: 800 clamp(4rem, 18vw, 8rem)/1 Tahoma, sans-serif; letter-spacing: -.09em; }
+    h1 { margin: 1rem 0; font-size: clamp(1.5rem, 5vw, 2.4rem); line-height: 1.5; }
+    p { color: #52606d; line-height: 2; max-width: 42rem; }
+    nav { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin-top: 2rem; }
+    a { display: inline-block; padding: .7rem 1.2rem; border-radius: 7px; color: #9c292e; font-weight: 700; text-decoration: none; }
+    a.primary { background: #9c292e; color: white; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible { outline: 3px solid #d58a38; outline-offset: 3px; }
+    @media (prefers-reduced-motion: no-preference) { main { animation: appear .35s ease-out both; } @keyframes appear { from { opacity: 0; transform: translateY(8px); } } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="masthead">کارفانسا نیوز</div>
+    <div class="rule" aria-hidden="true"></div>
+    <span class="folio" aria-hidden="true">{{ code }}</span>
+    <h1>{{ code }} — {{ title }}</h1>
+    <p>{{ message }}</p>
+    <nav aria-label="مسیرهای پیشنهادی">
+      <a class="primary" href="/">بازگشت به صفحه اصلی</a>
+      {% if show_latest %}<a href="/news">مشاهده آخرین اخبار</a>{% endif %}
+      {% if show_retry %}<a href="">تلاش دوباره</a>{% endif %}
+    </nav>
+  </main>
+</body>
+</html>

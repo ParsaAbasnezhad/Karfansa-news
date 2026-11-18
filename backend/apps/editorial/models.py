@@ -13,6 +13,8 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import slugify
 
+from apps.common.image_validation import validate_staff_image
+
 from .images import create_webp_variants
 from .sanitizer import sanitize_article_html
 
@@ -101,6 +103,7 @@ class EditorialArticle(models.Model):
     content = models.TextField(verbose_name="متن خبر")
     featured_image = models.ImageField(
         upload_to=featured_image_path,
+        validators=[validate_staff_image],
         blank=True,
         width_field="featured_image_width",
         height_field="featured_image_height",
@@ -218,6 +221,7 @@ class EditorialImage(models.Model):
     )
     image = models.ImageField(
         upload_to=gallery_image_path,
+        validators=[validate_staff_image],
         width_field="width",
         height_field="height",
         verbose_name="تصویر",

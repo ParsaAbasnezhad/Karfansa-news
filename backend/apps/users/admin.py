@@ -34,7 +34,15 @@ class UserAdmin(DjangoUserAdmin):
         "date_joined",
     )
     list_filter = ("is_staff", "is_superuser", "is_active", "is_contact_signup", "date_joined")
-    search_fields = ("username", "email", "normalized_email", "mobile", "claimed_mobile", "first_name", "last_name")
+    search_fields = (
+        "username",
+        "email",
+        "normalized_email",
+        "mobile",
+        "claimed_mobile",
+        "first_name",
+        "last_name",
+    )
     ordering = ("-date_joined",)
     list_per_page = 40
     readonly_fields = (*DjangoUserAdmin.readonly_fields, "email_verified_at", "mobile_verified_at")

@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router";
 import { Icon } from "@/components/ui/Icon";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { formatNumber, formatShortDate } from "@/lib/format";
-import { isSafeHref } from "@/lib/safe-text";
+import { isSafeHref } from "@/lib/safe-text-utils";
 import { editorialErrorMessage } from "../api/messages";
 import { EditorialImage } from "../components/EditorialImage";
 import { EditorialNewsGrid } from "../components/EditorialNewsCard";

@@ -17,6 +17,7 @@ from django.http import HttpRequest
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
 
+from apps.common.client_ip import client_ip
 from apps.common.exceptions import AppError, RateLimitedError
 
 from .models import OTPChallenge, User
@@ -65,9 +66,8 @@ def throttle(
     include_ip: bool = True,
     challenge_id: str | None = None,
 ) -> None:
-    # REMOTE_ADDR is the only trusted address until a trusted proxy is configured.
     if include_ip:
-        ip = request.META.get("REMOTE_ADDR", "unknown")
+        ip = client_ip(request)
         _increment_limit(_limit_key(action, "ip", ip), 30, 900)
     if identifier:
         _increment_limit(_limit_key(action, "identifier", identifier), 10, 900)

@@ -5,5 +5,8 @@ __pycache__
 .mypy_cache
 .ruff_cache
 staticfiles
+media
+*.sqlite3
 .env
+.env.*
 .git

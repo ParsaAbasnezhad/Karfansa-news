@@ -187,11 +187,16 @@ def test_profile_read_and_update_only_affects_current_user(client):
         content_type="application/json",
     )
     assert invalid.status_code == 422
-    assert Client().patch(
-        "/api/v1/auth/me/",
-        data={"first_name": "سارا", "last_name": "احمدی"},
-        content_type="application/json",
-    ).status_code == 401
+    assert (
+        Client()
+        .patch(
+            "/api/v1/auth/me/",
+            data={"first_name": "سارا", "last_name": "احمدی"},
+            content_type="application/json",
+        )
+        .status_code
+        == 401
+    )
 
 
 def test_otp_expiration_attempts_reuse_and_resend(client, auth_env):

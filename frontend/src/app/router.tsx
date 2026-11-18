@@ -8,6 +8,7 @@ import { NewsDetailPage } from "@/features/news/pages/NewsDetailPage";
 import { NewsHomePage } from "@/features/news/pages/NewsHomePage";
 import { NewsListPage } from "@/features/news/pages/NewsListPage";
 import { StatusPage } from "@/features/status/StatusPage";
+import { ErrorPage } from "@/features/error/ErrorPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
 import { VerifyPage } from "@/features/auth/VerifyPage";
@@ -94,4 +95,5 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  { path: "*", element: <ErrorPage kind="not-found" /> },
 ]);

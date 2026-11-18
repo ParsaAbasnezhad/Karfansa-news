@@ -42,6 +42,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.core.middleware.SafeResponseCSPMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -95,12 +96,14 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+
 # Session authentication is used by the browser client. JavaScript may read
 # the CSRF cookie to send X-CSRFToken, but never the session cookie.
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_HTTPONLY = False
+TRUST_X_REAL_IP = False
 
 # --- Notifications ----------------------------------------------------------
 # SMTP is Django's default production backend. Development may override it

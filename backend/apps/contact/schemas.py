@@ -1,6 +1,8 @@
 import re
 from typing import Literal
 
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from ninja import Schema
 from pydantic import Field, field_validator
 
@@ -39,6 +41,15 @@ class ContactMessageIn(Schema):
         if not re.fullmatch(r"\+?[1-9]\d{7,14}", compact):
             raise ValueError("شماره موبایل معتبر وارد کنید.")
         return compact
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value: str) -> str:
+        try:
+            validate_email(value)
+        except DjangoValidationError as exc:
+            raise ValueError("آدرس ایمیل معتبر نیست.") from exc
+        return value
 
 
 class ContactMessageOut(Schema):

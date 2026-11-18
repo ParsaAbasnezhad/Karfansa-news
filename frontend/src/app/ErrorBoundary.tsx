@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
-import { Button } from "@/components/ui/Button";
+import { ErrorPage } from "@/features/error/ErrorPage";
 import { reportError } from "@/lib/errors";
 
 interface Props {
@@ -24,12 +24,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   override render(): ReactNode {
     if (!this.state.hasError) return this.props.children;
-    return (
-      <div role="alert" style={{ padding: "2rem" }}>
-        <h1>Something went wrong</h1>
-        <p>Please reload the page and try again.</p>
-        <Button onClick={() => window.location.reload()}>Reload</Button>
-      </div>
-    );
+    return <ErrorPage kind="server" />;
   }
 }

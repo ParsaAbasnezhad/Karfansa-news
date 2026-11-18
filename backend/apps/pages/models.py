@@ -1,7 +1,9 @@
+# ruff: noqa: RUF001 - Persian field labels intentionally contain Arabic-script confusables.
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.advertising.validators import validate_safe_destination_url
+from apps.common.image_validation import validate_staff_image
 from apps.common.models import TimeStampedModel
 
 
@@ -31,6 +33,7 @@ class AboutPage(SingletonModel, TimeStampedModel):
     intro = models.TextField(verbose_name="متن معرفی")
     hero_image = models.ImageField(
         upload_to="pages/about/hero/%Y/%m/",
+        validators=[validate_staff_image],
         blank=True,
         verbose_name="تصویر اصلی",
     )
@@ -44,6 +47,7 @@ class AboutPage(SingletonModel, TimeStampedModel):
     goals = models.TextField(blank=True, verbose_name="اهداف پلتفرم")
     mission_image = models.ImageField(
         upload_to="pages/about/mission/%Y/%m/",
+        validators=[validate_staff_image],
         blank=True,
         verbose_name="تصویر بخش مأموریت",
     )
@@ -146,6 +150,7 @@ class AboutTeamMember(TimeStampedModel):
     bio = models.TextField(blank=True, verbose_name="بیوگرافی")
     photo = models.ImageField(
         upload_to="pages/about/team/%Y/%m/",
+        validators=[validate_staff_image],
         blank=True,
         verbose_name="تصویر",
     )

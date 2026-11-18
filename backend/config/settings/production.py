@@ -8,15 +8,26 @@ globals().update({name: value for name, value in vars(base).items() if name.isup
 DEBUG = False
 # Production must declare its hosts explicitly.
 ALLOWED_HOSTS = base.env.list("DJANGO_ALLOWED_HOSTS")
+CSRF_TRUSTED_ORIGINS = base.env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+TRUST_X_REAL_IP = base.env.bool("DJANGO_TRUST_X_REAL_IP", default=False)
+MIDDLEWARE = [*base.MIDDLEWARE, "apps.users.middleware.AdminLoginThrottleMiddleware"]
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Only enable this when the sole ingress proxy overwrites (rather than appends
+# or passes through) the client's X-Forwarded-Proto header. Otherwise a client
+# can make an insecure request appear secure to Django.
+if base.env.bool("DJANGO_TRUST_X_FORWARDED_PROTO", default=False):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = base.env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-SECURE_HSTS_SECONDS = base.env.int("DJANGO_SECURE_HSTS_SECONDS", default=31536000)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# Roll out HSTS only after HTTPS is verified on the public domain. Enabling
+# subdomains or preload additionally requires an audit of every subdomain.
+SECURE_HSTS_SECONDS = base.env.int("DJANGO_SECURE_HSTS_SECONDS", default=0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = base.env.bool(
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False
+)
+SECURE_HSTS_PRELOAD = base.env.bool("DJANGO_SECURE_HSTS_PRELOAD", default=False)
 SECURE_CONTENT_TYPE_NOSNIFF = True

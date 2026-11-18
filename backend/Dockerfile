@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH="/opt/venv/bin:$PATH"
 
-COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /usr/local/bin/uv
 
 RUN groupadd --system --gid 1000 app \
     && useradd --system --uid 1000 --gid app --create-home app \
@@ -35,5 +35,6 @@ FROM base AS production
 ENV DJANGO_SETTINGS_MODULE=config.settings.production
 RUN uv sync --frozen --no-install-project --no-dev
 COPY --chown=app:app . .
+RUN mkdir -p /app/media /app/staticfiles
 EXPOSE 8000
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--graceful-timeout", "30", "--timeout", "60"]

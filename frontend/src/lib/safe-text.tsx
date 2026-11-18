@@ -1,14 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Strip tags/scripts and keep plain text safe for CMS fields. */
-export function sanitizePlainText(value: string): string {
-  return value
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/javascript:/gi, "")
-    .trim();
-}
+import { sanitizePlainText } from "./safe-text-utils";
 
 export function SafeText({
   value,
@@ -34,11 +26,4 @@ export function SafeMultiline({ value, className }: { value: string; className?:
       ))}
     </div>
   );
-}
-
-export function isSafeHref(url: string): boolean {
-  const value = url.trim();
-  if (!value) return false;
-  if (value.startsWith("/") && !value.startsWith("//")) return true;
-  return /^https?:\/\//i.test(value);
 }

@@ -7,10 +7,12 @@ import time
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
+from types import SimpleNamespace
 from urllib.parse import urldefrag, urljoin, urlparse
 
 import feedparser
 import requests
+import urllib3
 from django.core.cache import cache
 from django.db import DatabaseError, connection, transaction
 from django.utils import timezone
@@ -98,11 +100,67 @@ def validate_rss_url(url):
     except socket.gaierror as exc:
         raise requests.ConnectionError("RSS host could not be resolved.") from exc
 
+    vetted_addresses = []
     for address in addresses:
         ip = ipaddress.ip_address(address[4][0])
 
         if not ip.is_global:
             raise ValueError("Private or non-public IP addresses are not allowed.")
+        normalized = str(ip)
+        if normalized not in vetted_addresses:
+            vetted_addresses.append(normalized)
+
+    if not vetted_addresses:
+        raise requests.ConnectionError("RSS host has no usable address.")
+    return vetted_addresses[:2]
+
+
+def _request_pinned_url(url, address):
+    """Connect to a vetted address, but verify TLS against the original hostname."""
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    ascii_hostname = hostname.encode("idna").decode("ascii")
+    host_header = f"[{ascii_hostname}]" if ":" in ascii_hostname else ascii_hostname
+    if port != (443 if parsed.scheme == "https" else 80):
+        host_header = f"{host_header}:{port}"
+
+    pool_options = {"retries": False}
+    if parsed.scheme == "https":
+        pool_options.update(
+            cert_reqs="CERT_REQUIRED",
+            assert_hostname=ascii_hostname,
+            server_hostname=ascii_hostname,
+        )
+        pool = urllib3.HTTPSConnectionPool(address, port, **pool_options)
+    else:
+        pool = urllib3.HTTPConnectionPool(address, port, **pool_options)
+
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+    try:
+        return pool, pool.urlopen(
+            "GET",
+            path,
+            headers={"Host": host_header, "User-Agent": USER_AGENT},
+            timeout=urllib3.Timeout(connect=5, read=REQUEST_TIMEOUT),
+            preload_content=False,
+            redirect=False,
+            retries=False,
+        )
+    except urllib3.exceptions.NewConnectionError as exc:
+        pool.close()
+        raise requests.ConnectionError("RSS network request failed") from exc
+    except urllib3.exceptions.TimeoutError as exc:
+        pool.close()
+        raise requests.Timeout("RSS request timed out") from exc
+    except urllib3.exceptions.SSLError as exc:
+        pool.close()
+        raise ValueError("RSS TLS verification failed.") from exc
+    except urllib3.exceptions.HTTPError as exc:
+        pool.close()
+        raise requests.ConnectionError("RSS network request failed") from exc
 
 
 def download_feed(url):
@@ -111,32 +169,43 @@ def download_feed(url):
     current_url = url
 
     for _ in range(MAX_REDIRECTS + 1):
-        validate_rss_url(current_url)
-
-        response = requests.get(
-            current_url,
-            headers={"User-Agent": USER_AGENT},
-            timeout=REQUEST_TIMEOUT,
-            allow_redirects=False,
-            stream=True,
-        )
+        addresses = validate_rss_url(current_url)
+        last_connection_error = None
+        for address in addresses:
+            try:
+                pool, response = _request_pinned_url(current_url, address)
+                break
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                last_connection_error = exc
+        else:
+            raise last_connection_error
         try:
-            if response.is_redirect:
+            if response.status in {301, 302, 303, 307, 308}:
                 location = response.headers.get("Location")
                 if not location:
                     raise ValueError("Invalid redirect response.")
                 current_url = urljoin(current_url, location)
                 continue
 
-            response.raise_for_status()
+            if response.status >= 400:
+                raise requests.HTTPError(
+                    f"HTTP {response.status}",
+                    response=SimpleNamespace(status_code=response.status),
+                )
             content = bytearray()
-            for chunk in response.iter_content(chunk_size=8192):
-                content.extend(chunk)
-                if len(content) > MAX_RESPONSE_SIZE:
-                    raise ValueError("RSS response exceeds the size limit.")
+            try:
+                for chunk in response.stream(8192):
+                    content.extend(chunk)
+                    if len(content) > MAX_RESPONSE_SIZE:
+                        raise ValueError("RSS response exceeds the size limit.")
+            except urllib3.exceptions.TimeoutError as exc:
+                raise requests.Timeout("RSS request timed out") from exc
+            except urllib3.exceptions.HTTPError as exc:
+                raise requests.ConnectionError("RSS network request failed") from exc
             return bytes(content)
         finally:
             response.close()
+            pool.close()
 
     raise ValueError("Too many redirects.")
 
@@ -184,7 +253,7 @@ def _safe_error_message(exc):
     if isinstance(exc, DatabaseError):
         return "Database operation failed"
     if isinstance(exc, ValueError):
-        return str(exc)[:300]
+        return "Invalid RSS feed or URL"
     return f"{type(exc).__name__} while processing feed"
 
 

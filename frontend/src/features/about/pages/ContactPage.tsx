@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import { ContactForm } from "@/features/about/components/ContactForm";
 import { useContactPage } from "@/features/about/hooks/use-pages";
 import { usePageMeta } from "@/hooks/use-page-meta";
-import { isSafeHref, sanitizePlainText } from "@/lib/safe-text";
+import { isSafeHref, sanitizePlainText } from "@/lib/safe-text-utils";
 
 import "../about.css";
 
@@ -17,7 +17,10 @@ function ExternalOrText({
 }) {
   const text = sanitizePlainText(children);
   if (!text) return null;
-  if (href && isSafeHref(href)) {
+  const safeContactLink =
+    (href.startsWith("mailto:") && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(href.slice(7))) ||
+    (href.startsWith("tel:") && /^\+?[0-9(). -]{3,30}$/.test(href.slice(4)));
+  if (href && (isSafeHref(href) || safeContactLink)) {
     return (
       <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer">
         {text}

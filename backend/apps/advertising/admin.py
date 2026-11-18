@@ -80,7 +80,8 @@ class AdvertisementSlideAdmin(admin.ModelAdmin):
         if not obj.pk or not obj.image_desktop:
             return "—"
         return format_html(
-            '<img src="{}" alt="" style="max-height:72px;max-width:160px;border-radius:4px;object-fit:cover;" />',
+            '<img src="{}" alt="" style="max-height:72px;max-width:160px;'
+            'border-radius:4px;object-fit:cover;" />',
             obj.image_desktop.url,
         )
 
@@ -90,6 +91,7 @@ class AdvertisementSlideAdmin(admin.ModelAdmin):
         if not obj.pk or not image:
             return "—"
         return format_html(
-            '<img src="{}" alt="" style="max-height:72px;max-width:120px;border-radius:4px;object-fit:cover;" />',
+            '<img src="{}" alt="" style="max-height:72px;max-width:120px;'
+            'border-radius:4px;object-fit:cover;" />',
             image.url,
         )

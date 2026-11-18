@@ -3,6 +3,7 @@
 from django.http import HttpRequest
 from ninja import Router
 
+from apps.advertising.validators import safe_destination_url
 from apps.pages import selectors
 from apps.pages.schemas import (
     AboutFeatureOut,
@@ -79,9 +80,9 @@ def pages_about(request: HttpRequest) -> AboutPageOut:
         cta_title=page.cta_title,
         closing_text=page.closing_text,
         primary_cta_label=page.primary_cta_label,
-        primary_cta_url=page.primary_cta_url,
+        primary_cta_url=safe_destination_url(page.primary_cta_url),
         secondary_cta_label=page.secondary_cta_label,
-        secondary_cta_url=page.secondary_cta_url,
+        secondary_cta_url=safe_destination_url(page.secondary_cta_url),
         show_globe=page.show_globe,
         seo_title=page.seo_title or page.title,
         seo_description=page.seo_description or page.intro[:300],
@@ -113,10 +114,10 @@ def pages_contact(request: HttpRequest) -> ContactPageOut:
         whatsapp=page.whatsapp,
         office_address=page.office_address,
         response_hours=page.response_hours,
-        map_url=page.map_url,
-        instagram_url=page.instagram_url,
-        linkedin_url=page.linkedin_url,
-        telegram_url=page.telegram_url,
+        map_url=safe_destination_url(page.map_url),
+        instagram_url=safe_destination_url(page.instagram_url),
+        linkedin_url=safe_destination_url(page.linkedin_url),
+        telegram_url=safe_destination_url(page.telegram_url),
         support_text=page.support_text,
         form_intro=page.form_intro,
         seo_title=page.seo_title or page.title,

@@ -13,6 +13,7 @@ import { Icon } from "@/components/ui/Icon";
 import { useAdvertisementSlides } from "@/features/advertising/hooks";
 import type { AdvertisementSlide } from "@/features/advertising/types";
 import { formatNumber } from "@/lib/format";
+import { isSafeHref } from "@/lib/safe-text-utils";
 
 import "../advertising.css";
 
@@ -24,7 +25,7 @@ function isExternal(url: string): boolean {
 }
 
 function CtaLink({ slide }: { slide: AdvertisementSlide }) {
-  if (!slide.button_text || !slide.button_url) return null;
+  if (!slide.button_text || !slide.button_url || !isSafeHref(slide.button_url)) return null;
   const className = "ad-slide-cta";
   if (isExternal(slide.button_url)) {
     return (

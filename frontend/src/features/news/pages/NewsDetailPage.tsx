@@ -7,6 +7,7 @@ import { NewsState } from "@/features/news/components/NewsState";
 import { useNewsDetail } from "@/features/news/hooks/use-news";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { formatShortDate } from "@/lib/format";
+import { isSafeHref } from "@/lib/safe-text-utils";
 
 import "../news.css";
 
@@ -81,7 +82,7 @@ export function NewsDetailPage() {
           <div className="news-story-meta">
             <span>
               <Icon name="building" />
-              {item.source_website ? (
+              {item.source_website && isSafeHref(item.source_website) ? (
                 <a href={item.source_website} target="_blank" rel="noopener noreferrer">
                   {item.source_name}
                 </a>
@@ -116,15 +117,17 @@ export function NewsDetailPage() {
             این خبر از {item.source_name} دریافت شده است. برای مطالعهٔ متن کامل و جزئیات بیشتر به
             منبع اصلی مراجعه کنید.
           </p>
-          <a
-            className="news-origin"
-            href={item.original_url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            مطالعه در {item.source_name}
-            <Icon name="arrow" />
-          </a>
+          {isSafeHref(item.original_url) ? (
+            <a
+              className="news-origin"
+              href={item.original_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              مطالعه در {item.source_name}
+              <Icon name="arrow" />
+            </a>
+          ) : null}
         </footer>
       </article>
 

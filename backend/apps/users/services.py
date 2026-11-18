@@ -162,7 +162,8 @@ def register(request: HttpRequest, payload: RegisterIn) -> str:
     if channel == OTPChallenge.Channel.EMAIL:
         mobile_conflict &= Q(mobile_verified_at__isnull=False)
     conflicts = User.objects.filter(
-        (email_conflict if email else Q(pk__in=[])) | (mobile_conflict if mobile else Q(pk__in=[]))
+        (email_conflict if email else Q(pk__in=[]))
+        | (mobile_conflict if mobile else Q(pk__in=[]))
         | Q(is_contact_signup=True, is_active=False, email=email, mobile=mobile)
     )
     existing = list(conflicts[:2])
@@ -278,9 +279,11 @@ def resend_code(request: HttpRequest, challenge_id: str) -> str:
     old = OTPChallenge.objects.select_related("user").filter(pk=parsed_id).first()
     if old is None:
         return resend_fake_challenge(challenge_id)
-    latest = OTPChallenge.objects.filter(
-        user=old.user, purpose=old.purpose, channel=old.channel
-    ).order_by("-last_sent_at").first()
+    latest = (
+        OTPChallenge.objects.filter(user=old.user, purpose=old.purpose, channel=old.channel)
+        .order_by("-last_sent_at")
+        .first()
+    )
     if old.consumed_at or old.invalidated_at or latest is None or latest.pk != old.pk:
         return resend_fake_challenge(challenge_id)
     if old.purpose == OTPChallenge.Purpose.REGISTRATION and old.user.is_active:

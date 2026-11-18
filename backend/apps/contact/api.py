@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from ninja import Router, Status
 from ninja.decorators import decorate_view
 
+from apps.common.client_ip import client_ip
 from apps.common.exceptions import AppError, RateLimitedError
 
 from .models import ContactMessage
@@ -31,7 +32,7 @@ def create_contact_message(
     if payload.website.strip():
         raise AppError("درخواست معتبر نیست.")
 
-    remote_addr = request.META.get("REMOTE_ADDR", "unknown")
+    remote_addr = client_ip(request)
     throttle_id = hashlib.sha256(remote_addr.encode()).hexdigest()
     throttle_key = f"contact-message:{throttle_id}"
     cache.add(throttle_key, 0, timeout=3600)

@@ -16,11 +16,13 @@ CMD ["npm", "run", "dev"]
 FROM base AS build
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN VITE_API_URL=/api/v1 npm run build
 
 
 # ----------------------------------------------------------------- production
-FROM nginx:1.27-alpine AS production
+FROM nginx:1.30.6-alpine3.24 AS production
+COPY nginx-main.conf /etc/nginx/nginx.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
+USER nginx
+EXPOSE 8080

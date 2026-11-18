@@ -5,6 +5,7 @@ from ninja import Router
 
 from apps.advertising import selectors
 from apps.advertising.schemas import AdvertisementSlideListOut, AdvertisementSlideOut
+from apps.advertising.validators import safe_destination_url
 
 router = Router()
 
@@ -28,7 +29,7 @@ def advertising_slides(request: HttpRequest) -> AdvertisementSlideListOut:
             image_desktop=_media_url(slide.image_desktop),
             image_mobile=_media_url(slide.image_mobile) or _media_url(slide.image_desktop),
             button_text=slide.button_text,
-            button_url=slide.button_url,
+            button_url=safe_destination_url(slide.button_url),
             sort_order=slide.sort_order,
         )
         for slide in slides

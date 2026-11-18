@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.advertising.validators import validate_safe_destination_url
+from apps.common.image_validation import validate_staff_image
 from apps.common.models import TimeStampedModel
 
 
@@ -12,10 +13,12 @@ class AdvertisementSlide(TimeStampedModel):
     description = models.TextField(max_length=600, blank=True, verbose_name="توضیحات")
     image_desktop = models.ImageField(
         upload_to="advertising/slides/desktop/%Y/%m/",
+        validators=[validate_staff_image],
         verbose_name="تصویر دسکتاپ",
     )
     image_mobile = models.ImageField(
         upload_to="advertising/slides/mobile/%Y/%m/",
+        validators=[validate_staff_image],
         blank=True,
         verbose_name="تصویر موبایل",
     )
@@ -57,6 +60,4 @@ class AdvertisementSlide(TimeStampedModel):
             return False
         if self.starts_at and self.starts_at > moment:
             return False
-        if self.ends_at and self.ends_at < moment:
-            return False
-        return True
+        return not (self.ends_at and self.ends_at < moment)

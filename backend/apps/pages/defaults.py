@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001 - Persian copy intentionally contains Arabic-script confusables.
 """Default About/Contact copy used when the CMS row is first created."""
 
 ABOUT_DEFAULTS = {

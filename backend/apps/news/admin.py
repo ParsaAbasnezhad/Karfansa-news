@@ -41,7 +41,13 @@ class NewsSourceAdmin(admin.ModelAdmin):
         "last_accepted_count",
         "last_error_count",
     )
-    list_filter = ("is_active", "category", "health_status", "last_fetch_status", "is_headline_source")
+    list_filter = (
+        "is_active",
+        "category",
+        "health_status",
+        "last_fetch_status",
+        "is_headline_source",
+    )
     search_fields = ("name", "rss_url", "website_url")
     list_editable = ("is_active", "is_headline_source")
     ordering = ("name",)

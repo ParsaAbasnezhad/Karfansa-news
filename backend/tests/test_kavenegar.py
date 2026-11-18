@@ -66,12 +66,10 @@ def test_send_otp_uses_verify_lookup_path(monkeypatch: pytest.MonkeyPatch) -> No
     )
     monkeypatch.setattr(
         "apps.users.notifications.import_string",
-        lambda _path: (lambda: provider),
+        lambda _path: lambda: provider,
     )
     send_otp(destination="+989121234567", channel="sms", code="654321", purpose="login")
-    assert seen == [
-        {"destination": "+989121234567", "code": "654321", "purpose": "login"}
-    ]
+    assert seen == [{"destination": "+989121234567", "code": "654321", "purpose": "login"}]
 
 
 @override_settings(KAVENEGAR_API_KEY="", KAVENEGAR_VERIFY_TEMPLATE="karfansaotp")
@@ -98,9 +96,7 @@ def test_provider_rejection_is_not_acceptance(monkeypatch: pytest.MonkeyPatch) -
     )
     provider = KavenegarSmsProvider()
     assert (
-        provider.send_verification_code(
-            destination="+989121234567", code="123456", purpose="login"
-        )
+        provider.send_verification_code(destination="+989121234567", code="123456", purpose="login")
         is False
     )
 

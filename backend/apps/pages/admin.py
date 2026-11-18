@@ -37,7 +37,8 @@ class AboutTeamMemberInline(admin.StackedInline):
         if not obj.pk or not obj.photo:
             return "—"
         return format_html(
-            '<img src="{}" alt="" style="max-height:64px;max-width:64px;border-radius:4px;object-fit:cover;" />',
+            '<img src="{}" alt="" style="max-height:64px;max-width:64px;'
+            'border-radius:4px;object-fit:cover;" />',
             obj.photo.url,
         )
 
@@ -117,7 +118,8 @@ class AboutPageAdmin(admin.ModelAdmin):
         if not obj.pk or not obj.hero_image:
             return "—"
         return format_html(
-            '<img src="{}" alt="" style="max-height:90px;max-width:180px;border-radius:4px;object-fit:cover;" />',
+            '<img src="{}" alt="" style="max-height:90px;max-width:180px;'
+            'border-radius:4px;object-fit:cover;" />',
             obj.hero_image.url,
         )
 
@@ -126,7 +128,8 @@ class AboutPageAdmin(admin.ModelAdmin):
         if not obj.pk or not obj.mission_image:
             return "—"
         return format_html(
-            '<img src="{}" alt="" style="max-height:90px;max-width:180px;border-radius:4px;object-fit:cover;" />',
+            '<img src="{}" alt="" style="max-height:90px;max-width:180px;'
+            'border-radius:4px;object-fit:cover;" />',
             obj.mission_image.url,
         )
 
@@ -170,7 +173,8 @@ class AboutTeamMemberAdmin(admin.ModelAdmin):
         if not obj.pk or not obj.photo:
             return "—"
         return format_html(
-            '<img src="{}" alt="" style="max-height:48px;max-width:48px;border-radius:4px;object-fit:cover;" />',
+            '<img src="{}" alt="" style="max-height:48px;max-width:48px;'
+            'border-radius:4px;object-fit:cover;" />',
             obj.photo.url,
         )
 

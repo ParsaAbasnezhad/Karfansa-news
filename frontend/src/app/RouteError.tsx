@@ -1,18 +1,15 @@
+import { useEffect } from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router";
 
+import { ErrorPage } from "@/features/error/ErrorPage";
 import { reportError } from "@/lib/errors";
 
 export function RouteError() {
   const error = useRouteError();
-  if (!isRouteErrorResponse(error)) reportError(error);
+  const knownResponse = isRouteErrorResponse(error);
+  useEffect(() => {
+    if (!knownResponse) reportError(error);
+  }, [error, knownResponse]);
 
-  const message = isRouteErrorResponse(error)
-    ? `${error.status} ${error.statusText}`
-    : "Unexpected error";
-
-  return (
-    <div role="alert" style={{ padding: "2rem" }}>
-      <h1>{message}</h1>
-    </div>
-  );
+  return <ErrorPage kind={knownResponse && error.status === 404 ? "not-found" : "server"} />;
 }

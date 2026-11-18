@@ -1,4 +1,5 @@
 import json
+import socket
 from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime
 from io import StringIO
@@ -11,7 +12,7 @@ from django.core.management import call_command
 from django.test import override_settings
 
 from apps.news.models import News, NewsFetchRun, NewsIntake, NewsSource
-from apps.news.services.rss_fetcher import fetch_all_sources, fetch_source
+from apps.news.services.rss_fetcher import download_feed, fetch_all_sources, fetch_source
 
 RSS = """<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">
@@ -35,6 +36,91 @@ RSS = """<?xml version="1.0" encoding="UTF-8" ?>
 LOCMEM_CACHE = {
     "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
 }
+
+
+def _dns_answer(address):
+    return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, 443))]
+
+
+def test_download_feed_pins_public_address_and_checks_tls_hostname():
+    response = type("Response", (), {})()
+    response.status = 200
+    response.headers = {}
+    response.stream = lambda chunk_size: iter([b"<rss></rss>"])
+    response.close = lambda: None
+
+    with (
+        patch(
+            "apps.news.services.rss_fetcher.socket.getaddrinfo",
+            return_value=_dns_answer("93.184.215.14"),
+        ) as dns_lookup,
+        patch("apps.news.services.rss_fetcher.urllib3.HTTPSConnectionPool") as pool_class,
+        patch("apps.news.services.rss_fetcher.requests.get") as unpinned_request,
+    ):
+        pool = pool_class.return_value
+        pool.urlopen.return_value = response
+        assert download_feed("https://news.example:8443/feed.xml?section=economy") == b"<rss></rss>"
+
+    pool_class.assert_called_once_with(
+        "93.184.215.14",
+        8443,
+        retries=False,
+        cert_reqs="CERT_REQUIRED",
+        assert_hostname="news.example",
+        server_hostname="news.example",
+    )
+    assert pool.urlopen.call_args.args[:2] == ("GET", "/feed.xml?section=economy")
+    assert pool.urlopen.call_args.kwargs["headers"]["Host"] == "news.example:8443"
+    dns_lookup.assert_called_once()
+    unpinned_request.assert_not_called()
+
+
+def test_redirect_to_private_network_is_blocked_before_second_connection():
+    response = type("Response", (), {})()
+    response.status = 302
+    response.headers = {"Location": "http://127.0.0.1/internal"}
+    response.close = lambda: None
+
+    with (
+        patch(
+            "apps.news.services.rss_fetcher.socket.getaddrinfo",
+            side_effect=[_dns_answer("93.184.215.14"), _dns_answer("127.0.0.1")],
+        ),
+        patch("apps.news.services.rss_fetcher.urllib3.HTTPSConnectionPool") as secure_pool,
+        patch("apps.news.services.rss_fetcher.urllib3.HTTPConnectionPool") as insecure_pool,
+        pytest.raises(ValueError, match="Private or non-public"),
+    ):
+        secure_pool.return_value.urlopen.return_value = response
+        download_feed("https://news.example/rss")
+
+    secure_pool.return_value.urlopen.assert_called_once()
+    insecure_pool.assert_not_called()
+
+
+def test_download_feed_tries_second_validated_public_address():
+    response = type("Response", (), {})()
+    response.status = 200
+    response.headers = {}
+    response.stream = lambda chunk_size: iter([b"<rss></rss>"])
+    response.close = lambda: None
+
+    with (
+        patch(
+            "apps.news.services.rss_fetcher.socket.getaddrinfo",
+            return_value=_dns_answer("93.184.215.14") + _dns_answer("93.184.215.15"),
+        ),
+        patch("apps.news.services.rss_fetcher._request_pinned_url") as pinned_request,
+    ):
+        pinned_request.side_effect = [
+            requests.ConnectionError("first address unavailable"),
+            (type("Pool", (), {"close": lambda self: None})(), response),
+        ]
+        assert download_feed("https://news.example/rss") == b"<rss></rss>"
+
+    assert [call.args[1] for call in pinned_request.call_args_list] == [
+        "93.184.215.14",
+        "93.184.215.15",
+    ]
 
 
 @override_settings(CACHES=LOCMEM_CACHE)
