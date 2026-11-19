@@ -1,7 +1,9 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
+import { prefetchRoute } from "@/app/route-prefetch";
 import { Icon } from "@/components/ui/Icon";
+import { InstallAppButton } from "@/components/ui/InstallAppButton";
 import { useHeadlines } from "@/features/news/hooks/use-news";
 import { useSession } from "@/features/auth/session";
 
@@ -124,6 +126,7 @@ export function AppLayout() {
             >
               {user ? "حساب من" : "ورود / ثبت‌نام"}
             </Link>
+            <InstallAppButton />
             <button
               type="button"
               className="sbtn iconbtn"
@@ -147,6 +150,8 @@ export function AppLayout() {
                 end={item.end}
                 className={({ isActive }) => (isActive ? "on" : "")}
                 onClick={closeOverlays}
+                onMouseEnter={() => void prefetchRoute(item.to)}
+                onFocus={() => void prefetchRoute(item.to)}
               >
                 {item.label}
               </NavLink>
@@ -297,11 +302,14 @@ export function AppLayout() {
                 end={item.end}
                 className={({ isActive }) => (isActive ? "on" : "")}
                 onClick={closeOverlays}
+                onMouseEnter={() => void prefetchRoute(item.to)}
+                onFocus={() => void prefetchRoute(item.to)}
               >
                 {item.label}
               </NavLink>
             ))}
           </nav>
+          <InstallAppButton placement="drawer" />
           {topics.length > 0 ? (
             <>
               <p className="dt">موضوعات خبری</p>

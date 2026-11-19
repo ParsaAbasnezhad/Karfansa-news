@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Link } from "react-router";
 
+import { prefetchPublicRoutesOnIdle } from "@/app/route-prefetch";
 import { Icon } from "@/components/ui/Icon";
 import { AdSlider } from "@/features/advertising/components/AdSlider";
 import { EditorialHomeSections } from "@/features/editorial/components/EditorialHomeSections";
@@ -67,6 +69,8 @@ function comparableTitle(value: string): string {
 }
 
 export function NewsHomePage() {
+  useEffect(prefetchPublicRoutesOnIdle, []);
+
   const headlines = useHeadlines();
   const editorialFeatured = useEditorialFeatured();
   const editorialLatest = useEditorialLatest();
