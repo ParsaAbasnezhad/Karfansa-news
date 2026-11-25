@@ -2,20 +2,24 @@ import calendar
 import ipaddress
 import logging
 import re
+import secrets
 import socket
 import time
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from types import SimpleNamespace
+from typing import Protocol, cast
 from urllib.parse import urldefrag, urljoin, urlparse
 
 import feedparser
 import requests
 import urllib3
-from django.core.cache import cache
+from django.core.cache import cache, caches
+from django.core.cache.backends.locmem import LocMemCache
 from django.db import DatabaseError, connection, transaction
 from django.utils import timezone
+from redis.exceptions import RedisError
 
 from apps.news.models import News, NewsFetchRun, NewsIntake, NewsSource, NewsTopic
 from apps.news.services.news_scorer import classify_content_with_reason
@@ -27,7 +31,58 @@ MAX_RESPONSE_SIZE = 5 * 1024 * 1024  # 5 MB
 MAX_REDIRECTS = 3
 MAX_NETWORK_ATTEMPTS = 3
 RETRYABLE_HTTP_STATUSES = {429, 500, 502, 503, 504}
+RSS_LOCK_TIMEOUT_SECONDS = 600
+RSS_POSTGRES_LOCK_ID = 740216001
 logger = logging.getLogger(__name__)
+
+
+class _CacheLock(Protocol):
+    def acquire(self, blocking: bool = True) -> bool: ...
+
+    def release(self) -> None: ...
+
+
+def _try_postgres_rss_lock() -> bool:
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_try_advisory_lock(%s)", [RSS_POSTGRES_LOCK_ID])
+        return bool(cursor.fetchone()[0])
+
+
+def _release_postgres_rss_lock() -> None:
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_advisory_unlock(%s)", [RSS_POSTGRES_LOCK_ID])
+        if not cursor.fetchone()[0]:
+            logger.error("RSS PostgreSQL advisory lock was no longer owned by this connection")
+
+
+def _acquire_cache_rss_lock(lock_key: str, token: str) -> tuple[bool, _CacheLock | None]:
+    lock_factory = getattr(cache, "lock", None)
+    if callable(lock_factory):
+        lock = cast(
+            _CacheLock,
+            lock_factory(lock_key, timeout=RSS_LOCK_TIMEOUT_SECONDS, blocking_timeout=0),
+        )
+        return lock.acquire(blocking=False), lock
+    if not isinstance(caches["default"], LocMemCache):
+        raise RuntimeError("RSS lock backend must support ownership-aware distributed locks.")
+    return cache.add(lock_key, token, timeout=RSS_LOCK_TIMEOUT_SECONDS), None
+
+
+def _release_cache_rss_lock(
+    lock_key: str,
+    token: str,
+    lock: _CacheLock | None,
+) -> None:
+    if lock is not None:
+        try:
+            lock.release()
+        except RedisError as exc:
+            logger.error(
+                "Failed to release Redis RSS lock",
+                extra={"error_type": type(exc).__name__},
+            )
+    elif cache.get(lock_key) == token:
+        cache.delete(lock_key)
 
 
 class _SummaryTextParser(HTMLParser):
@@ -560,15 +615,14 @@ def fetch_all_sources():
 
     run = NewsFetchRun.objects.create()
     lock_key = "news:rss-fetch-lock"
-    # Session locks survive long runs and are released when the worker disconnects.
+    lock_token = secrets.token_urlsafe(32)
+    cache_lock = None
     postgres_lock = connection.vendor == "postgresql"
     try:
         if postgres_lock:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT pg_try_advisory_lock(%s)", [740216001])
-                acquired = cursor.fetchone()[0]
+            acquired = _try_postgres_rss_lock()
         else:
-            acquired = cache.add(lock_key, "running", timeout=600)
+            acquired, cache_lock = _acquire_cache_rss_lock(lock_key, lock_token)
     except Exception as exc:
         run.status = NewsFetchRun.Status.FAILED
         run.finished_at = timezone.now()
@@ -748,9 +802,8 @@ def fetch_all_sources():
     finally:
         if postgres_lock:
             try:
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT pg_advisory_unlock(%s)", [740216001])
+                _release_postgres_rss_lock()
             except DatabaseError:
                 logger.error("Failed to release PostgreSQL RSS advisory lock")
         else:
-            cache.delete(lock_key)
+            _release_cache_rss_lock(lock_key, lock_token, cache_lock)

@@ -1,11 +1,42 @@
 """Production settings: base + hardened security defaults."""
 
+from urllib.parse import urlsplit
+
+from django.core.exceptions import ImproperlyConfigured
+
 from config.settings import base
 
 # Re-export base settings explicitly (no wildcard import).
 globals().update({name: value for name, value in vars(base).items() if name.isupper()})
 
 DEBUG = False
+if (
+    len(base.SECRET_KEY) < 50
+    or len(set(base.SECRET_KEY)) < 5
+    or base.SECRET_KEY.startswith("django-insecure-")
+):
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY must be a strong random key of at least 50 chars."
+    )
+
+_redis_urls = (
+    ("REDIS_URL", base.REDIS_URL),
+    ("CELERY_BROKER_URL", base.CELERY_BROKER_URL),
+    ("CELERY_RESULT_BACKEND", base.CELERY_RESULT_BACKEND),
+)
+_redis_auth = None
+for _setting_name, _redis_url in _redis_urls:
+    _parsed_redis_url = urlsplit(_redis_url)
+    if _parsed_redis_url.scheme not in {"redis", "rediss"} or not _parsed_redis_url.password:
+        raise ImproperlyConfigured(f"{_setting_name} must use Redis authentication.")
+    _current_auth = (_parsed_redis_url.username, _parsed_redis_url.password)
+    if _redis_auth is None:
+        _redis_auth = _current_auth
+    elif _current_auth != _redis_auth:
+        raise ImproperlyConfigured(
+            "Redis, Celery broker, and result backend credentials must match."
+        )
+
 # Production must declare its hosts explicitly.
 ALLOWED_HOSTS = base.env.list("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = base.env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])

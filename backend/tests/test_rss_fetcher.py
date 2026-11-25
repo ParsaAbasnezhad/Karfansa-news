@@ -9,6 +9,7 @@ import pytest
 import requests
 from django.core.cache import cache
 from django.core.management import call_command
+from django.db import connection
 from django.test import override_settings
 
 from apps.news.models import News, NewsFetchRun, NewsIntake, NewsSource
@@ -257,26 +258,47 @@ def test_partial_feed_reports_entry_errors():
 @override_settings(CACHES=LOCMEM_CACHE)
 @pytest.mark.django_db
 def test_overlapping_fetch_skips_before_downloading():
-    assert cache.add("news:rss-fetch-lock", "running", timeout=30)
+    if connection.vendor == "postgresql":
+        lock = patch("apps.news.services.rss_fetcher._try_postgres_rss_lock", return_value=False)
+    else:
+        assert cache.add("news:rss-fetch-lock", "running", timeout=30)
+        lock = patch("apps.news.services.rss_fetcher.cache.add", return_value=False)
+
     try:
-        with patch("apps.news.services.rss_fetcher.download_feed") as download:
+        with lock, patch("apps.news.services.rss_fetcher.download_feed") as download:
             result = fetch_all_sources()
-        assert result[0]["status"] == "skipped"
-        assert result[0]["reason"] == "RSS fetch is already running"
-        assert result[0]["run_id"] is not None
-        download.assert_not_called()
     finally:
         cache.delete("news:rss-fetch-lock")
+    assert result[0]["status"] == "skipped"
+    assert result[0]["reason"] == "RSS fetch is already running"
+    assert result[0]["run_id"] is not None
+    download.assert_not_called()
+
+
+@override_settings(CACHES=LOCMEM_CACHE)
+@pytest.mark.django_db
+def test_cache_rss_lock_release_preserves_a_replacement_owner():
+    lock_key = "news:rss-fetch-lock"
+    assert cache.add(lock_key, "original-owner", timeout=30)
+    cache.set(lock_key, "replacement-owner", timeout=30)
+
+    from apps.news.services.rss_fetcher import _release_cache_rss_lock
+
+    _release_cache_rss_lock(lock_key, "original-owner", None)
+
+    assert cache.get(lock_key) == "replacement-owner"
 
 
 @override_settings(CACHES=LOCMEM_CACHE)
 @pytest.mark.django_db
 def test_lock_backend_failure_is_recorded_as_a_failed_run():
+    target = (
+        "apps.news.services.rss_fetcher._try_postgres_rss_lock"
+        if connection.vendor == "postgresql"
+        else "apps.news.services.rss_fetcher.cache.add"
+    )
     with (
-        patch(
-            "apps.news.services.rss_fetcher.cache.add",
-            side_effect=RuntimeError("redis unavailable"),
-        ),
+        patch(target, side_effect=RuntimeError("lock backend unavailable")),
         pytest.raises(RuntimeError),
     ):
         fetch_all_sources()

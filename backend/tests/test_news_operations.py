@@ -80,7 +80,7 @@ def test_celery_schedules_rss_every_15_minutes_and_discovers_tasks():
     assert "apps.news.cleanup_old_news" in celery_app.tasks
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_database_beat_scheduler_persists_the_15_minute_rss_schedule():
     scheduler = DatabaseScheduler(app=celery_app, lazy=True)
     scheduler.setup_schedule()

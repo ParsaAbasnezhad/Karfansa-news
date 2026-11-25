@@ -63,7 +63,7 @@ module = ["django_celery_beat.*", "environ.*", "celery.*"]
 ignore_missing_imports = true
 
 [tool.django-stubs]
-django_settings_module = "config.settings.development"
+django_settings_module = "config.settings.test"
 
 [[tool.mypy.overrides]]
 module = ["apps.core.tasks"]
