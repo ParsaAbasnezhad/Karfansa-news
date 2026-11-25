@@ -21,8 +21,10 @@ Compose v2. Never run `docker compose down -v` on a data-bearing deployment.
    If behind a CDN or another proxy, configure and verify its trusted client
    IP ranges at the host proxy before enabling per-IP auth rate limits.
 2. Copy `.env.production.example` to `.env.production`, replace all
-   `REPLACE_` placeholders, and set permissions to `0600`. Use a long random
-   Django key and URL-safe database password. Set the exact hostname in
+   `REPLACE_` placeholders, and set permissions to `0600`. Use a strong random
+   Django key (at least 50 characters) and URL-safe random database and Redis
+   passwords. Production Redis requires authentication; the cache, Celery
+   broker, and result backend use the same password. Set the exact hostname in
    `DJANGO_ALLOWED_HOSTS` and its HTTPS origin in
    `DJANGO_CSRF_TRUSTED_ORIGINS`. Configure working SMTP and a working SMS
    provider: the current frontend exposes both account flows. Store secrets in

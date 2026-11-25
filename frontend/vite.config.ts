@@ -13,7 +13,14 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: 5173,
       // File-watching inside Docker bind mounts needs polling on some hosts.
-      watch: env.CHOKIDAR_USEPOLLING === "true" ? { usePolling: true } : undefined,
+      watch: {
+        ignored: [
+          "**/android/**/build/**",
+          "**/android/.gradle/**",
+          "**/android/capacitor-cordova-android-plugins/**",
+        ],
+        usePolling: env.CHOKIDAR_USEPOLLING === "true",
+      },
       proxy: {
         "/api": {
           target: env.VITE_PROXY_TARGET ?? "http://localhost:8000",
