@@ -1,17 +1,26 @@
 # ruff: noqa: RUF001
 """Notification delivery must acknowledge acceptance and fail closed."""
 
+import logging
+import re
+from datetime import timedelta
 from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
+from django.apps import apps as django_apps
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.exceptions import ImproperlyConfigured
 from django.test import override_settings
 from django.utils import timezone
 
 from apps.users import notifications
 from apps.users import tasks as user_tasks
+from apps.users.apps import UsersConfig
+from apps.users.models import OTPChallenge
+from apps.users.notifications import validate_sms_backend_settings
+from apps.users.otp import _destination_digest
 from apps.users.tasks import deliver_notice_for_user
 
 
@@ -81,6 +90,51 @@ def test_sms_fails_closed_without_provider() -> None:
             code="123456",
             purpose="login",
         )
+
+
+def test_console_sms_backend_is_rejected_without_debug() -> None:
+    with override_settings(DEBUG=False, SMS_BACKEND="console"), pytest.raises(ImproperlyConfigured):
+        UsersConfig("apps.users", django_apps).ready()
+    validate_sms_backend_settings(debug=True, backend="console")
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True, SMS_BACKEND="console", SMS_PROVIDER_CLASS="")
+def test_celery_otp_task_logs_code_and_persists_verifier(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    now = timezone.now()
+    user = get_user_model().objects.create_user(
+        username="console-reader",
+        mobile="+989121234567",
+        claimed_mobile="+989121234567",
+        mobile_verified_at=now,
+        is_active=True,
+    )
+    challenge = OTPChallenge.objects.create(
+        user=user,
+        purpose=OTPChallenge.Purpose.LOGIN,
+        channel=OTPChallenge.Channel.SMS,
+        destination_digest=_destination_digest("+989121234567"),
+        verifier="",
+        expires_at=now + timedelta(minutes=5),
+        last_sent_at=now,
+    )
+
+    def unexpected_provider(_path: str) -> None:
+        raise AssertionError("Console SMS must not load or contact an external provider")
+
+    monkeypatch.setattr(notifications, "import_string", unexpected_provider)
+    with caplog.at_level(logging.INFO, logger="apps.users.notifications"):
+        user_tasks.dispatch_otp_challenge.run(str(challenge.pk))
+
+    challenge.refresh_from_db()
+    assert challenge.delivered_at is not None
+    assert challenge.verifier
+    assert challenge.verifier != ""
+    code_match = re.search(r"OTP Code: ([0-9]{6})", caplog.text)
+    assert code_match is not None
+    assert "Destination: 0912***4567" in caplog.text
 
 
 @override_settings(

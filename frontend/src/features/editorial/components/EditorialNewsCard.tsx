@@ -6,7 +6,11 @@ import type { EditorialArticle } from "../types/editorial";
 export function EditorialMeta({ article }: { article: EditorialArticle }) {
   return (
     <p className="kfe-meta">
-      {article.category ? <span>{article.category.name}</span> : null}
+      {article.category ? (
+        <Link to={`/editorial/category/${encodeURIComponent(article.category.slug)}`}>
+          {article.category.name}
+        </Link>
+      ) : null}
       {article.published_at ? (
         <time dateTime={article.published_at}>{formatShortDate(article.published_at)}</time>
       ) : null}

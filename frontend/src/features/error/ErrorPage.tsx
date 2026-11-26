@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 import styles from "./ErrorPage.module.css";
 
@@ -7,14 +7,11 @@ type ErrorKind = "not-found" | "server";
 export function ErrorPage({ kind, onRetry }: { kind: ErrorKind; onRetry?: () => void }) {
   const notFound = kind === "not-found";
 
-  useEffect(() => {
-    document.title = `${notFound ? "صفحه پیدا نشد" : "خطای سرور"} | کارفنسا نیوز`;
-    const robots = document.createElement("meta");
-    robots.name = "robots";
-    robots.content = "noindex, nofollow";
-    document.head.appendChild(robots);
-    return () => robots.remove();
-  }, [notFound]);
+  usePageMeta(
+    `${notFound ? "صفحه پیدا نشد" : "خطای سرور"} | کارفنسا نیوز`,
+    undefined,
+    { robots: "noindex,nofollow" },
+  );
 
   return (
     <div className={styles.page} dir="rtl">

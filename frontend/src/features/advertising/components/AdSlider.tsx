@@ -29,14 +29,14 @@ function CtaLink({ slide }: { slide: AdvertisementSlide }) {
   const className = "ad-slide-cta";
   if (isExternal(slide.button_url)) {
     return (
-      <a className={className} href={slide.button_url} target="_blank" rel="noopener noreferrer">
+      <a className={className} href={slide.button_url} target="_blank" rel="sponsored noopener noreferrer">
         {slide.button_text}
         <Icon name="arrow" />
       </a>
     );
   }
   return (
-    <Link className={className} to={slide.button_url}>
+    <Link className={className} to={slide.button_url} rel="sponsored">
       {slide.button_text}
       <Icon name="arrow" />
     </Link>
@@ -191,6 +191,7 @@ export function AdSlider({ autoPlay = true }: { autoPlay?: boolean }) {
                 <div className="ad-slide-overlay" aria-hidden="true" />
               </div>
               <div className="ad-slide-copy">
+                <span className="ad-slide-disclosure">تبلیغات</span>
                 {slide.subtitle ? <span className="ad-slide-kicker">{slide.subtitle}</span> : null}
                 <h3>{slide.title}</h3>
                 {slide.description ? <p>{slide.description}</p> : null}

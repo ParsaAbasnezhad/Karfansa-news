@@ -17,6 +17,7 @@ from apps.common.image_validation import validate_staff_image
 
 from .images import create_webp_variants
 from .sanitizer import sanitize_article_html
+from .seo import canonical_path, validate_article_canonical_url, validate_category_canonical_url
 
 
 def _unique_slug(instance: models.Model, text: str, *, max_length: int = 240) -> str:
@@ -46,6 +47,10 @@ def gallery_image_path(instance: models.Model, filename: str) -> str:
     return _image_path("gallery", filename)
 
 
+def social_image_path(instance: models.Model, filename: str) -> str:
+    return _image_path("social", filename)
+
+
 class EditorialCategory(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="نام")
     slug = models.SlugField(
@@ -53,6 +58,21 @@ class EditorialCategory(models.Model):
     )
     position = models.PositiveSmallIntegerField(default=0, verbose_name="ترتیب")
     is_active = models.BooleanField(default=True, verbose_name="فعال")
+    seo_title = models.CharField(max_length=160, blank=True, verbose_name="عنوان سئو")
+    seo_description = models.CharField(max_length=300, blank=True, verbose_name="توضیح سئو")
+    seo_social_image = models.ImageField(
+        upload_to=social_image_path,
+        validators=[validate_staff_image],
+        blank=True,
+        verbose_name="تصویر اشتراک‌گذاری",
+    )
+    seo_noindex = models.BooleanField(default=False, verbose_name="عدم نمایش در جستجو")
+    seo_canonical_url = models.URLField(
+        max_length=500,
+        blank=True,
+        validators=[validate_category_canonical_url],
+        verbose_name="آدرس کنونیکال جایگزین",
+    )
 
     class Meta:
         ordering = ["position", "name"]
@@ -65,7 +85,35 @@ class EditorialCategory(models.Model):
     def save(self, *args, **kwargs) -> None:
         if not self.slug:
             self.slug = _unique_slug(self, self.name, max_length=120)
+        self._validate_canonical_target()
         super().save(*args, **kwargs)
+
+    def _validate_canonical_target(self) -> None:
+        if self.seo_canonical_url:
+            target_slug = canonical_path(self.seo_canonical_url, kind="category")
+            if target_slug == self.slug:
+                self.seo_canonical_url = ""
+                return
+            if (
+                target_slug != self.slug
+                and not type(self)
+                .objects.filter(
+                    slug=target_slug,
+                    is_active=True,
+                    seo_noindex=False,
+                    seo_canonical_url="",
+                    articles__status=EditorialArticle.Status.PUBLISHED,
+                    articles__published_at__lte=timezone.now(),
+                )
+                .exists()
+            ):
+                raise ValidationError(
+                    {"seo_canonical_url": "دسته مقصد باید محتوای منتشرشده داشته باشد."}
+                )
+
+    def clean(self) -> None:
+        super().clean()
+        self._validate_canonical_target()
 
 
 class EditorialTag(models.Model):
@@ -163,6 +211,19 @@ class EditorialArticle(models.Model):
     )
     seo_title = models.CharField(max_length=160, blank=True, verbose_name="عنوان سئو")
     seo_description = models.CharField(max_length=300, blank=True, verbose_name="توضیح سئو")
+    seo_social_image = models.ImageField(
+        upload_to=social_image_path,
+        validators=[validate_staff_image],
+        blank=True,
+        verbose_name="تصویر اشتراک‌گذاری",
+    )
+    seo_noindex = models.BooleanField(default=False, verbose_name="عدم نمایش در جستجو")
+    seo_canonical_url = models.URLField(
+        max_length=500,
+        blank=True,
+        validators=[validate_article_canonical_url],
+        verbose_name="آدرس کنونیکال جایگزین",
+    )
 
     class Meta:
         ordering = ["-is_pinned", "-priority", "-published_at", "-id"]
@@ -187,6 +248,7 @@ class EditorialArticle(models.Model):
         )
         if not self.slug:
             self.slug = _unique_slug(self, self.title)
+        self._validate_canonical_target()
         if self.source_url:
             try:
                 URLValidator(schemes=["http", "https"])(self.source_url)
@@ -210,6 +272,30 @@ class EditorialArticle(models.Model):
         elif not self.featured_image and self.featured_image_variants:
             self.featured_image_variants = {}
             type(self).objects.filter(pk=self.pk).update(featured_image_variants={})
+
+    def _validate_canonical_target(self) -> None:
+        if self.seo_canonical_url:
+            target_slug = canonical_path(self.seo_canonical_url, kind="article")
+            if target_slug == self.slug:
+                self.seo_canonical_url = ""
+                return
+            if (
+                target_slug != self.slug
+                and not type(self)
+                .objects.filter(
+                    slug=target_slug,
+                    status=self.Status.PUBLISHED,
+                    seo_noindex=False,
+                    seo_canonical_url="",
+                    published_at__lte=timezone.now(),
+                )
+                .exists()
+            ):
+                raise ValidationError({"seo_canonical_url": "خبر مقصد باید منتشرشده و موجود باشد."})
+
+    def clean(self) -> None:
+        super().clean()
+        self._validate_canonical_target()
 
 
 class EditorialImage(models.Model):

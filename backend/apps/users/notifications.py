@@ -13,12 +13,14 @@ from email.utils import parseaddr
 from typing import Protocol, cast
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import EmailMultiAlternatives
 from django.utils.module_loading import import_string
 
 logger = logging.getLogger(__name__)
 
 _OTP_RE = re.compile(r"^[0-9]{6}$")
+OTP_TTL_SECONDS = 300
 _NON_DELIVERY_BACKENDS = {
     "django.core.mail.backends.console.EmailBackend",
     "django.core.mail.backends.dummy.EmailBackend",
@@ -60,6 +62,54 @@ class VerificationSmsProvider(SmsProvider, Protocol):
         ...
 
 
+def validate_sms_backend_settings(*, debug: bool, backend: str) -> None:
+    if backend not in {"console", "provider"}:
+        raise ImproperlyConfigured("SMS_BACKEND must be either 'console' or 'provider'.")
+    if backend == "console" and not debug:
+        raise ImproperlyConfigured("SMS_BACKEND=console is only allowed when DEBUG=True.")
+
+
+def _mask_sms_destination(destination: str) -> str:
+    digits = re.sub(r"\D", "", destination)
+    if digits.startswith("98") and len(digits) == 12:
+        digits = "0" + digits[2:]
+    if len(digits) < 8:
+        return "***"
+    return f"{digits[:4]}***{digits[-4:]}"
+
+
+class ConsoleSmsBackend:
+    """Log development SMS locally without making any network requests."""
+
+    def send_verification_code(self, *, destination: str, code: str, purpose: str) -> bool:
+        logger.info(
+            "\n========================================\n"
+            "[DEVELOPMENT SMS]\n"
+            "Purpose: %s\n"
+            "Destination: %s\n"
+            "OTP Code: %s\n"
+            "Expires in: %s seconds\n"
+            "========================================",
+            purpose,
+            _mask_sms_destination(destination),
+            code,
+            OTP_TTL_SECONDS,
+        )
+        return True
+
+    def send_sms(self, *, destination: str, message: str) -> bool:
+        logger.info(
+            "\n========================================\n"
+            "[DEVELOPMENT SMS]\n"
+            "Destination: %s\n"
+            "Message: %s\n"
+            "========================================",
+            _mask_sms_destination(destination),
+            message,
+        )
+        return True
+
+
 class DevelopmentSmsPreviewProvider:
     """Deliver SMS previews to a configured developer mailbox, only in DEBUG.
 
@@ -81,6 +131,11 @@ class DevelopmentSmsPreviewProvider:
 
 
 def _sms_provider() -> SmsProvider:
+    backend = getattr(settings, "SMS_BACKEND", "provider")
+    validate_sms_backend_settings(debug=settings.DEBUG, backend=backend)
+    if backend == "console":
+        return ConsoleSmsBackend()
+
     provider_path = getattr(settings, "SMS_PROVIDER_CLASS", "")
     if provider_path:
         try:

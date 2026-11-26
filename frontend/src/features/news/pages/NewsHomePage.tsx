@@ -75,8 +75,8 @@ export function NewsHomePage() {
   const editorialFeatured = useEditorialFeatured();
   const editorialLatest = useEditorialLatest();
   usePageMeta(
-    "اخبار اختصاصی اقتصاد و کسب‌وکار | کارفنسا نیوز",
-    "خبرها و گزارش‌های اختصاصی تحریریهٔ کارفنسا، در کنار تازه‌های اقتصاد و بازار از منابع معتبر.",
+    "کارفنسا نیوز | اخبار اقتصادی، تجارت و بازارهای جهانی",
+    "کارفنسا نیوز، رسانه خبری و تحلیلی اقتصاد، تجارت، صادرات، واردات، صنایع و بازارهای جهانی.",
   );
 
   const editorialArticles = [

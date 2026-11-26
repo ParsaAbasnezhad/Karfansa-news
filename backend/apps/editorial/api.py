@@ -24,6 +24,7 @@ from .schemas import (
     FeaturedOut,
     LatestOut,
 )
+from .seo import effective_canonical_url
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ def _srcset(image, variants: dict[str, str]) -> str:
 
 
 def _person_name(person) -> str:
-    return (person.get_full_name().strip() or person.get_username()) if person else ""
+    return person.get_full_name().strip() if person else ""
 
 
 def _source_url(value: str) -> str:
@@ -55,7 +56,20 @@ def _source_url(value: str) -> str:
 def _category(category: EditorialCategory | None) -> dict[str, object] | None:
     if category is None:
         return None
-    return {"id": category.pk, "slug": category.slug, "name": category.name}
+    canonical_override = effective_canonical_url(
+        category.seo_canonical_url, kind="category", own_slug=category.slug
+    )
+    return {
+        "id": category.pk,
+        "slug": category.slug,
+        "name": category.name,
+        "seo_title": category.seo_title,
+        "seo_description": category.seo_description,
+        "seo_social_image_url": category.seo_social_image.url if category.seo_social_image else "",
+        "seo_noindex": category.seo_noindex
+        or bool(category.seo_canonical_url and not canonical_override),
+        "seo_canonical_url": canonical_override,
+    }
 
 
 def _article(request: HttpRequest, item: EditorialArticle) -> dict[str, object]:
@@ -72,6 +86,7 @@ def _article(request: HttpRequest, item: EditorialArticle) -> dict[str, object]:
         "category": _category(item.category),
         "tags": [tag.name for tag in item.tags.all()],
         "author_name": _person_name(item.author),
+        "author_id": item.author_id if _person_name(item.author) else None,
         "published_at": item.published_at,
         "updated_at": item.updated_at,
         "reading_time": item.reading_time,
@@ -172,6 +187,9 @@ def editorial_detail(request: HttpRequest, slug: str) -> dict[str, object]:
     if item.category_id:
         related = related.filter(category_id=item.category_id)
     related = related.order_by("-published_at", "-id")[:4]
+    canonical_override = effective_canonical_url(
+        item.seo_canonical_url, kind="article", own_slug=item.slug
+    )
     return {
         "item": {
             **_article(request, item),
@@ -182,6 +200,10 @@ def editorial_detail(request: HttpRequest, slug: str) -> dict[str, object]:
             "source_url": _source_url(item.source_url),
             "seo_title": item.seo_title,
             "seo_description": item.seo_description,
+            "seo_social_image_url": _image_url(request, item.seo_social_image),
+            "seo_noindex": item.seo_noindex
+            or bool(item.seo_canonical_url and not canonical_override),
+            "seo_canonical_url": canonical_override,
             "view_count": item.view_count,
         },
         "related": [_article(request, article) for article in related],

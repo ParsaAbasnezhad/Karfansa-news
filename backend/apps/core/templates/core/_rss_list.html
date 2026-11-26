@@ -1,0 +1,5 @@
+{% load seo_links %}{% for item in rss_items %}<article class="seo-card"><h3><a href="/news/{{ item.pk }}">{{ item.title }}</a></h3>
+  {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}<small>منبع: {{ item.source.name }}</small>
+  {% if item.published_at %}<time datetime="{{ item.published_at.isoformat }}">{{ item.published_at|date:"Y-m-d" }}</time>{% endif %}
+  {% with source_url=item.original_url|safe_external_url %}{% if source_url %}<a href="{{ source_url }}" rel="noopener noreferrer">منبع اصلی</a>{% endif %}{% endwith %}</article>
+{% empty %}<p>خبر منتشرشده‌ای در دسترس نیست.</p>{% endfor %}

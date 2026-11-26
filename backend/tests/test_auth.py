@@ -1,5 +1,7 @@
 """Security focused tests for the session and OTP flows."""
 
+import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
@@ -10,6 +12,7 @@ from django.db import connection
 from django.test import Client, RequestFactory
 from django.utils import timezone
 
+from apps.users import notifications
 from apps.users.models import OTPChallenge, ResetAuthorization
 from apps.users.notifications import DeliveryError
 from apps.users.otp import InvalidChallengeError, consume_challenge, issue_challenge
@@ -116,6 +119,46 @@ def test_registration_activation_and_secondary_contact_verification(client, auth
         ).status_code
         == 200
     )
+
+
+def test_console_sms_registration_delivers_verifiable_code_without_api_disclosure(
+    client, auth_env, monkeypatch, settings, caplog
+):
+    settings.DEBUG = True
+    settings.SMS_BACKEND = "console"
+    settings.SMS_PROVIDER_CLASS = ""
+    settings.SMS_DEV_INBOX = ""
+    assert isinstance(notifications._sms_provider(), notifications.ConsoleSmsBackend)
+    monkeypatch.setattr("apps.users.otp.send_otp", notifications.send_otp)
+
+    def unexpected_provider(_path):
+        raise AssertionError("Console SMS must not load or contact an external provider")
+
+    monkeypatch.setattr(notifications, "import_string", unexpected_provider)
+    with caplog.at_level(logging.INFO, logger="apps.users.notifications"):
+        response = post(
+            client,
+            "register",
+            registration_payload(email=None, verification_method="sms"),
+        )
+
+    assert response.status_code == 201
+    challenge = OTPChallenge.objects.get(pk=response.json()["challenge_id"])
+    assert challenge.delivered_at is not None
+    assert challenge.verifier
+    code_match = re.search(r"OTP Code: ([0-9]{6})", caplog.text)
+    assert code_match is not None
+    code = code_match.group(1)
+    assert "Destination: 0912***4567" in caplog.text
+    assert code not in response.content.decode()
+
+    verified = post(
+        client,
+        "verify-registration",
+        {"challenge_id": str(challenge.pk), "code": code},
+    )
+    assert verified.status_code == 200
+    assert verified.json()["user"]["mobile_verified"] is True
 
 
 def test_duplicate_and_invalid_registration(client, auth_env):
@@ -241,6 +284,16 @@ def test_otp_expiration_attempts_reuse_and_resend(client, auth_env):
     code = auth_env[-1]["code"]
     assert post(client, "verify-login-otp", {"challenge_id": cid, "code": code}).status_code == 200
     assert post(client, "verify-login-otp", {"challenge_id": cid, "code": code}).status_code == 400
+
+
+def test_login_otp_for_unregistered_identifier_stays_fake(client, auth_env, caplog):
+    response = post(client, "request-login-otp", {"identifier": "09129876543"})
+
+    assert response.status_code == 200
+    assert response.json()["challenge_id"]
+    assert OTPChallenge.objects.count() == 0
+    assert auth_env == []
+    assert "OTP Code:" not in caplog.text
 
 
 def test_password_recovery_is_single_use_and_invalidates_sessions(client, auth_env):

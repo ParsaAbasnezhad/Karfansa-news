@@ -11,6 +11,7 @@ import {
 } from "@/app/lazy-pages";
 import { RouteError } from "@/app/RouteError";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
 import { NewsHomePage } from "@/features/news/pages/NewsHomePage";
 import { StatusPage } from "@/features/status/StatusPage";
 import { ErrorPage } from "@/features/error/ErrorPage";
@@ -22,11 +23,8 @@ import { SecurityPage } from "@/features/auth/SecurityPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { ProfilePage } from "@/features/profile/ProfilePage";
 
-const pageFallback = (
-  <p className="wrap" role="status">
-    در حال بارگذاری…
-  </p>
-);
+/* Lightweight local fallback used for lazy routes during navigation and initial load. */
+const pageFallback = <PageSkeleton />;
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +51,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "editorial",
+        element: (
+          <Suspense fallback={pageFallback}>
+            <EditorialPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "editorial/category/:slug",
         element: (
           <Suspense fallback={pageFallback}>
             <EditorialPage />

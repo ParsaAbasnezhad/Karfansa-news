@@ -1,0 +1,105 @@
+{% load seo_links %}<!doctype html>
+<html lang="fa-IR" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    <meta name="description" content="{{ description }}" />
+    <meta name="robots" content="{% if noindex %}noindex,follow{% else %}index,follow{% endif %},max-image-preview:large" />
+    {% if verification %}<meta name="google-site-verification" content="{{ verification }}" />{% endif %}
+    <link rel="canonical" href="{{ canonical }}" />
+    <link rel="icon" href="{{ logo_url }}" type="image/svg+xml" />
+    <meta property="og:type" content="{% if page_type == 'article' %}article{% else %}website{% endif %}" />
+    <meta property="og:locale" content="fa_IR" />
+    <meta property="og:site_name" content="کارفنسا نیوز" />
+    <meta property="og:title" content="{{ title }}" />
+    <meta property="og:description" content="{{ description }}" />
+    <meta property="og:url" content="{{ canonical }}" />
+    {% if image %}<meta property="og:image" content="{{ image }}" />{% endif %}
+    <meta name="twitter:card" content="{% if image %}summary_large_image{% else %}summary{% endif %}" />
+    <meta name="twitter:title" content="{{ title }}" />
+    <meta name="twitter:description" content="{{ description }}" />
+    {% if image %}<meta name="twitter:image" content="{{ image }}" />{% endif %}
+    {% if article %}
+    <meta property="article:published_time" content="{{ article.published_at.isoformat }}" />
+    <meta property="article:modified_time" content="{{ article.updated_at.isoformat }}" />
+    {% if author_name %}<meta property="article:author" content="{{ author_name }}" />{% endif %}
+    {% endif %}
+    <script id="seo-jsonld" type="application/ld+json">{{ json_ld|safe }}</script>
+    {% if app_script %}<link rel="stylesheet" href="/assets/app.css" />{% endif %}
+    <style>
+      .seo-initial {max-width:1120px;margin:0 auto;padding:1.25rem;color:#172c40;font-family:Tahoma,Arial,sans-serif;line-height:1.85}
+      .seo-initial a {color:#155575;text-decoration:none}.seo-initial a:hover{text-decoration:underline}
+      .seo-nav,.seo-list {display:flex;flex-wrap:wrap;gap:.75rem 1.25rem}.seo-nav {align-items:center;border-bottom:1px solid #dce5e9;padding-bottom:1rem}
+      .seo-brand {display:inline-flex;align-items:center;gap:.6rem;font-weight:bold}.seo-brand img {width:70px;height:45px;object-fit:contain}
+      .seo-initial h1 {font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.45}.seo-initial h2 {font-size:1.35rem}
+      .seo-card {border-bottom:1px solid #dce5e9;padding:.85rem 0;max-width:100%}.seo-card h3 {margin:.1rem 0;font-size:1.1rem}
+      .seo-card time,.seo-card small {color:#526675}.seo-article-image {display:block;max-width:100%;height:auto;margin:1rem auto}
+      .seo-body img {max-width:100%;height:auto}.seo-footer {border-top:1px solid #dce5e9;margin-top:2rem;padding-top:1rem}
+    </style>
+    {% if app_script %}<script type="module" src="/assets/app.js"></script>{% endif %}
+  </head>
+  <body>
+    <div id="root">
+      <main class="seo-initial">
+        <nav class="seo-nav" aria-label="ناوبری اصلی">
+          <a class="seo-brand" href="/"><img src="{{ logo_url }}" width="70" height="45" alt="کارفنسا نیوز" /> کارفنسا نیوز</a>
+          <a href="/news">آخرین اخبار</a>
+          <a href="/editorial">تحلیل و گزارش</a>
+          <a href="/about">درباره ما</a>
+          <a href="/contact">تماس با ما</a>
+        </nav>
+        {% if categories %}<nav class="seo-nav" aria-label="دسته‌های تحریریه">
+          {% for category in categories %}<a href="/editorial/category/{{ category.slug|urlencode }}">{{ category.name }}</a>{% endfor %}
+        </nav>{% endif %}
+
+        {% if page_type == 'home' %}
+          <h1>کارفنسا نیوز</h1><p>{{ description }}</p>
+          <section aria-labelledby="editorial-heading"><h2 id="editorial-heading">تحلیل و گزارش</h2>
+            {% for item in editorials %}<article class="seo-card"><h3><a href="/editorial/{{ item.slug|urlencode }}">{{ item.title }}</a></h3>
+              <p>{{ item.summary }}</p><time datetime="{{ item.published_at.isoformat }}">{{ item.published_at|date:"Y-m-d" }}</time></article>{% empty %}<p>گزارش منتشرشده‌ای در دسترس نیست.</p>{% endfor %}
+          </section>
+          <section aria-labelledby="news-heading"><h2 id="news-heading">آخرین اخبار از منابع دیگر</h2>
+            {% include 'core/_rss_list.html' %}
+          </section>
+        {% elif page_type == 'news_list' %}
+          <h1>آخرین اخبار</h1><p>گزیده خبرهای منابع دیگر با ذکر منبع و پیوند به نسخه اصلی.</p>
+          {% include 'core/_rss_list.html' %}
+        {% elif page_type == 'editorial_list' or page_type == 'author' %}
+          <h1>{% if author_page_name %}مطالب {{ author_page_name }}{% elif selected_category %}{{ selected_category.name }}{% else %}تحلیل و گزارش{% endif %}</h1>
+          <p>{{ description }}</p>
+          {% for item in editorials %}<article class="seo-card"><h3><a href="/editorial/{{ item.slug|urlencode }}">{{ item.title }}</a></h3>
+            <p>{{ item.summary }}</p><time datetime="{{ item.published_at.isoformat }}">{{ item.published_at|date:"Y-m-d" }}</time></article>
+          {% empty %}<p>مطلب منتشرشده‌ای در این بخش در دسترس نیست.</p>{% endfor %}
+        {% elif page_type == 'article' %}
+          <nav aria-label="مسیر صفحه"><a href="/">خانه</a> / <a href="/editorial">تحلیل و گزارش</a>{% if article.category %} / <a href="/editorial/category/{{ article.category.slug|urlencode }}">{{ article.category.name }}</a>{% endif %}</nav>
+          <article><h1>{{ article.title }}</h1><p>{{ article.summary }}</p>
+            <p>{% if author_name %}نویسنده: <a href="/authors/{{ article.author_id }}">{{ author_name }}</a> · {% endif %}<time datetime="{{ article.published_at.isoformat }}">انتشار: {{ article.published_at|date:"Y-m-d H:i" }}</time>
+              {% if article.updated_at > article.published_at %} · <time datetime="{{ article.updated_at.isoformat }}">ویرایش: {{ article.updated_at|date:"Y-m-d H:i" }}</time>{% endif %}</p>
+            {% if article.featured_image %}<img class="seo-article-image" src="{{ article.featured_image.url }}" alt="{{ article.title }}"{% if article.featured_image_width %} width="{{ article.featured_image_width }}"{% endif %}{% if article.featured_image_height %} height="{{ article.featured_image_height }}"{% endif %} />{% endif %}
+            <div class="seo-body">{{ article_html|safe }}</div>
+            {% with source_url=article.source_url|safe_external_url %}{% if article.source_name or source_url %}<p>منبع: {% if article.source_name %}{{ article.source_name }}{% endif %}{% if source_url %} · <a href="{{ source_url }}" rel="noopener noreferrer">نسخه منبع</a>{% endif %}</p>{% endif %}{% endwith %}
+          </article>
+        {% elif page_type == 'rss_detail' %}
+          <article><h1>{{ rss_item.title }}</h1><p>{{ rss_item.summary }}</p>
+            <p>منبع: {{ rss_item.source.name }}{% if rss_item.published_at %} · <time datetime="{{ rss_item.published_at.isoformat }}">{{ rss_item.published_at|date:"Y-m-d H:i" }}</time>{% endif %}</p>
+            {% with source_url=rss_item.original_url|safe_external_url %}{% if source_url %}<p><a href="{{ source_url }}" rel="noopener noreferrer">خواندن متن کامل در منبع اصلی</a></p>{% endif %}{% endwith %}
+          </article>
+        {% elif page_type == 'about' %}
+          <h1>{{ about.title }}</h1><p>{{ about.intro }}</p>
+          {% if about.mission %}<section><h2>{{ about.mission_title|default:"ماموریت" }}</h2><p>{{ about.mission }}</p></section>{% endif %}
+          {% if about.story_body %}<section><h2>{{ about.story_title }}</h2><p>{{ about.story_body }}</p></section>{% endif %}
+          {% if about.values %}<section><h2>{{ about.values_title|default:"ارزش‌ها" }}</h2><p>{{ about.values }}</p></section>{% endif %}
+        {% elif page_type == 'contact' %}
+          <h1>{{ contact.title }}</h1><p>{{ contact.description }}</p>
+          {% if contact.support_email %}<p>ایمیل پشتیبانی: <a href="mailto:{{ contact.support_email }}">{{ contact.support_email }}</a></p>{% endif %}
+          {% if contact.business_email %}<p>ایمیل همکاری: <a href="mailto:{{ contact.business_email }}">{{ contact.business_email }}</a></p>{% endif %}
+          {% if contact.phone %}<p>تلفن: {{ contact.phone }}</p>{% endif %}
+          {% if contact.office_address %}<p>نشانی: {{ contact.office_address }}</p>{% endif %}
+          <p>{{ contact.support_text }}</p>
+        {% endif %}
+        <footer class="seo-footer"><a href="/about">درباره کارفنسا نیوز</a> · <a href="/contact">تماس با تحریریه</a></footer>
+      </main>
+    </div>
+  </body>
+</html>

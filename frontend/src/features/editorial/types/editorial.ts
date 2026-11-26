@@ -2,6 +2,11 @@ export interface EditorialCategory {
   id: number;
   slug: string;
   name: string;
+  seo_title?: string;
+  seo_description?: string;
+  seo_social_image_url?: string;
+  seo_noindex?: boolean;
+  seo_canonical_url?: string;
 }
 
 export interface EditorialArticle {
@@ -17,6 +22,7 @@ export interface EditorialArticle {
   category: EditorialCategory | null;
   tags: string[];
   author_name: string;
+  author_id?: number | null;
   published_at: string;
   updated_at: string;
   reading_time: number;
@@ -43,6 +49,9 @@ export interface EditorialDetail extends EditorialArticle {
   source_name: string;
   seo_title: string;
   seo_description: string;
+  seo_social_image_url?: string;
+  seo_noindex?: boolean;
+  seo_canonical_url?: string;
   view_count: number;
 }
 

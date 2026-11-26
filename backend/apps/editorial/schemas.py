@@ -9,6 +9,11 @@ class CategoryOut(Schema):
     id: int
     slug: str
     name: str
+    seo_title: str
+    seo_description: str
+    seo_social_image_url: str
+    seo_noindex: bool
+    seo_canonical_url: str
 
 
 class GalleryImageOut(Schema):
@@ -34,6 +39,7 @@ class ArticleOut(Schema):
     category: CategoryOut | None
     tags: list[str]
     author_name: str
+    author_id: int | None
     published_at: datetime
     updated_at: datetime
     reading_time: int
@@ -50,6 +56,9 @@ class ArticleDetailOut(ArticleOut):
     source_name: str
     seo_title: str
     seo_description: str
+    seo_social_image_url: str
+    seo_noindex: bool
+    seo_canonical_url: str
     view_count: int
 
 

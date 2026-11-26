@@ -8,6 +8,20 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      // Django's public HTML uses these stable entry names. Lazy chunks retain
+      // content hashes, and one stylesheet avoids route-specific CSS lookups.
+      cssCodeSplit: false,
+      rollupOptions: {
+        output: {
+          entryFileNames: "assets/app.js",
+          assetFileNames: (asset) =>
+            asset.names.some((name) => name.endsWith(".css"))
+              ? "assets/app.css"
+              : "assets/[name]-[hash][extname]",
+        },
+      },
+    },
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server: {
       host: true,

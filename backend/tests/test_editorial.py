@@ -8,7 +8,7 @@ import pytest
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, RequestFactory, override_settings
 from django.utils import timezone
@@ -137,7 +137,18 @@ def test_public_visibility_priority_filters_and_detail(client: Client) -> None:
     assert body["count"] == 3
     assert body["total_pages"] == 2
     assert [item["id"] for item in body["results"]] == [pinned.pk, high.pk]
-    assert body["categories"] == [{"id": category.pk, "slug": category.slug, "name": category.name}]
+    assert body["categories"] == [
+        {
+            "id": category.pk,
+            "slug": category.slug,
+            "name": category.name,
+            "seo_title": "",
+            "seo_description": "",
+            "seo_social_image_url": "",
+            "seo_noindex": False,
+            "seo_canonical_url": "",
+        }
+    ]
 
     searched = client.get("/api/v1/editorial/", {"q": "عادی"}).json()
     assert searched["count"] == 1
@@ -219,6 +230,7 @@ def test_admin_can_create_draft_with_rich_text(client: Client) -> None:
     form = client.get(add_url)
     assert form.status_code == 200
     assert b"editorial/editor.js" in form.content
+    assert b"editorial/seo-admin.js" in form.content
     response = client.post(
         add_url,
         {
@@ -251,3 +263,43 @@ def test_admin_can_create_draft_with_rich_text(client: Client) -> None:
     assert created.author_id == user.pk
     assert created.status == EditorialArticle.Status.DRAFT
     assert created.slug == "گزارش-تحریریه"
+
+
+@pytest.mark.django_db
+def test_editorial_seo_overrides_validate_public_canonical_targets(client: Client) -> None:
+    published = article(
+        "گزارش اصلی",
+        status=EditorialArticle.Status.PUBLISHED,
+        published_at=timezone.now() - timedelta(hours=1),
+    )
+    duplicate = article(
+        "نسخه تکراری",
+        status=EditorialArticle.Status.PUBLISHED,
+        seo_title="گزارش بازار",
+        seo_description="خلاصه اختصاصی گزارش بازار",
+        seo_noindex=True,
+        seo_canonical_url=f"https://karfansa.news.ir/editorial/{published.slug}",
+    )
+    payload = client.get(f"/api/v1/editorial/{duplicate.slug}/").json()["item"]
+    assert payload["seo_title"] == "گزارش بازار"
+    assert payload["seo_noindex"] is True
+    assert payload["seo_canonical_url"].endswith(published.slug)
+
+    duplicate.seo_canonical_url = "https://example.com/editorial/other"
+    with pytest.raises(ValidationError):
+        duplicate.full_clean()
+    duplicate.seo_canonical_url = "https://karfansa.news.ir/editorial/missing"
+    with pytest.raises(ValidationError):
+        duplicate.save()
+
+    category = EditorialCategory.objects.create(name="بازار")
+    empty = EditorialCategory(
+        name="صنعت",
+        seo_canonical_url=f"https://karfansa.news.ir/editorial/category/{category.slug}",
+    )
+    with pytest.raises(ValidationError):
+        empty.full_clean()
+    published.category = category
+    published.save()
+    empty.full_clean()
+    empty.save()

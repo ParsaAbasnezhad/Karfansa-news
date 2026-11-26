@@ -10,6 +10,17 @@ from config.settings import base
 globals().update({name: value for name, value in vars(base).items() if name.isupper()})
 
 DEBUG = False
+_seo_origin = urlsplit(SEO_SITE_URL)
+if (
+    _seo_origin.scheme != "https"
+    or not _seo_origin.hostname
+    or _seo_origin.username
+    or _seo_origin.password
+    or _seo_origin.path
+    or _seo_origin.query
+    or _seo_origin.fragment
+):
+    raise ImproperlyConfigured("SEO_SITE_URL must be a clean HTTPS origin.")
 if (
     len(base.SECRET_KEY) < 50
     or len(set(base.SECRET_KEY)) < 5

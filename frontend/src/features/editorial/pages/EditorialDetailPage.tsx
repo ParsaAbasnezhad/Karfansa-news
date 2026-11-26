@@ -22,12 +22,13 @@ export function EditorialDetailPage() {
     item?.seo_description || item?.summary || "خبر اختصاصی کارفنسا",
     {
       type: item ? "article" : "website",
-      image: item?.featured_image_url
-        ? new URL(item.featured_image_url, window.location.origin).href
-        : undefined,
+      image: item?.seo_social_image_url || item?.featured_image_url,
       publishedAt: item?.published_at,
       modifiedAt: item?.updated_at,
       author: item?.author_name,
+      section: item?.category?.name,
+      canonicalUrl: item?.seo_canonical_url,
+      robots: !item || item.seo_noindex ? "noindex,follow" : "index,follow",
     },
   );
   useEditorialStructuredData(item);
@@ -104,7 +105,7 @@ export function EditorialDetailPage() {
           {item.category ? (
             <Link
               className="kfe-article-category"
-              to={`/editorial?category=${encodeURIComponent(item.category.slug)}`}
+              to={`/editorial/category/${encodeURIComponent(item.category.slug)}`}
             >
               {item.category.name}
             </Link>
@@ -112,7 +113,11 @@ export function EditorialDetailPage() {
           <h1>{item.title}</h1>
           {item.summary ? <p className="kfe-article-summary">{item.summary}</p> : null}
           <div className="kfe-article-byline">
-            {item.author_name ? <span>نویسنده: {item.author_name}</span> : null}
+            {item.author_name ? (
+              <span>
+                نویسنده: {item.author_id ? <a href={`/authors/${item.author_id}`}>{item.author_name}</a> : item.author_name}
+              </span>
+            ) : null}
             <time dateTime={item.published_at}>انتشار: {formatShortDate(item.published_at)}</time>
             {item.updated_at && item.updated_at !== item.published_at ? (
               <time dateTime={item.updated_at}>ویرایش: {formatShortDate(item.updated_at)}</time>
@@ -155,12 +160,16 @@ export function EditorialDetailPage() {
                 </div>
               </section>
             ) : null}
-            {sourceUrl ? (
+            {sourceUrl || item.source_name ? (
               <p className="kfe-source">
                 منبع اصلی:{" "}
-                <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                  {item.source_name || sourceUrl}
-                </a>
+                {sourceUrl ? (
+                  <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
+                    {item.source_name || sourceUrl}
+                  </a>
+                ) : (
+                  item.source_name
+                )}
               </p>
             ) : null}
             {item.tags.length > 0 ? (

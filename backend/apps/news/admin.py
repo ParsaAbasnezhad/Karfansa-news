@@ -18,12 +18,20 @@ def deactivate_sources(modeladmin, request, queryset):
 @admin.action(description="انتشار خبرهای انتخاب‌شده")
 def publish_news(modeladmin, request, queryset):
     updated = queryset.update(is_published=True, is_archived=False)
+    if updated:
+        from apps.editorial.sitemap import invalidate_sitemaps
+
+        invalidate_sitemaps()
     modeladmin.message_user(request, f"{updated} خبر منتشر شد.", messages.SUCCESS)
 
 
 @admin.action(description="بایگانی خبرهای انتخاب‌شده")
 def archive_news(modeladmin, request, queryset):
     updated = queryset.update(is_archived=True, is_published=False)
+    if updated:
+        from apps.editorial.sitemap import invalidate_sitemaps
+
+        invalidate_sitemaps()
     modeladmin.message_user(request, f"{updated} خبر بایگانی شد.", messages.SUCCESS)
 
 

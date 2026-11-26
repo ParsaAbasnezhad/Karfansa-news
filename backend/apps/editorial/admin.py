@@ -1,6 +1,7 @@
 """Editorial workflow for staff writers and publishing editors."""
 
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpRequest, HttpResponse
@@ -50,8 +51,38 @@ class EditorialArticleForm(forms.ModelForm):
             "priority",
             "seo_title",
             "seo_description",
+            "seo_social_image",
+            "seo_noindex",
+            "seo_canonical_url",
         )
         widgets = {"content": RichTextWidget()}
+
+
+def _seo_snippet_preview(
+    obj: EditorialArticle | EditorialCategory | None, *, category: bool = False
+) -> str:
+    site = getattr(settings, "SEO_SITE_URL", "https://karfansa.news.ir").rstrip("/")
+    path = "/editorial/category/" if category else "/editorial/"
+    fallback = obj.name if isinstance(obj, EditorialCategory) else obj.title if obj else ""
+    description = (
+        obj.seo_description or (obj.summary if isinstance(obj, EditorialArticle) else "")
+        if obj
+        else ""
+    )
+    url = (obj.seo_canonical_url if obj else "") or f"{site}{path}{obj.slug if obj else ''}"
+    return format_html(
+        '<div class="editorial-seo-preview" data-seo-kind="{}" data-seo-site="{}">'
+        '<span class="editorial-seo-preview__url">{}</span>'
+        '<strong class="editorial-seo-preview__title">{}</strong>'
+        '<span class="editorial-seo-preview__description">{}</span>'
+        "<small>نمونه تقریبی نمایش در جستجو؛ گوگل ممکن است متن دیگری انتخاب کند.</small>"
+        "</div>",
+        "category" if category else "article",
+        site,
+        url,
+        (obj.seo_title if obj else "") or fallback,
+        description,
+    )
 
 
 class EditorialImageInline(admin.TabularInline):
@@ -71,11 +102,36 @@ class EditorialImageInline(admin.TabularInline):
 
 @admin.register(EditorialCategory)
 class EditorialCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "position", "is_active")
-    list_filter = ("is_active",)
+    list_display = ("name", "slug", "position", "is_active", "seo_noindex")
+    list_filter = ("is_active", "seo_noindex")
     list_editable = ("position", "is_active")
     search_fields = ("name", "slug")
     ordering = ("position", "name")
+    readonly_fields = ("seo_snippet_preview",)
+    fieldsets = (
+        ("دسته", {"fields": ("name", "slug", "position", "is_active")}),
+        (
+            "سئو",
+            {
+                "fields": (
+                    "seo_title",
+                    "seo_description",
+                    "seo_social_image",
+                    "seo_noindex",
+                    "seo_canonical_url",
+                    "seo_snippet_preview",
+                )
+            },
+        ),
+    )
+
+    class Media:
+        js = ("editorial/seo-admin.js",)
+        css = {"all": ("editorial/seo-admin.css",)}
+
+    @admin.display(description="پیش‌نمایش نتیجه جستجو")
+    def seo_snippet_preview(self, obj: EditorialCategory | None) -> str:
+        return _seo_snippet_preview(obj, category=True)
 
 
 @admin.register(EditorialTag)
@@ -113,6 +169,10 @@ def archive_articles(modeladmin, request, queryset) -> None:
     if not request.user.has_perm(PUBLISH_PERMISSION):
         raise PermissionDenied
     count = queryset.update(status=EditorialArticle.Status.ARCHIVED, updated_at=timezone.now())
+    if count:
+        from .sitemap import invalidate_sitemaps
+
+        invalidate_sitemaps()
     modeladmin.message_user(request, f"{count} خبر بایگانی شد.", messages.SUCCESS)
 
 
@@ -170,6 +230,7 @@ class EditorialArticleAdmin(admin.ModelAdmin):
         "view_count",
         "created_at",
         "updated_at",
+        "seo_snippet_preview",
     )
     fieldsets = (
         (
@@ -202,7 +263,19 @@ class EditorialArticleAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("سئو", {"fields": ("seo_title", "seo_description"), "classes": ("collapse",)}),
+        (
+            "سئو",
+            {
+                "fields": (
+                    "seo_title",
+                    "seo_description",
+                    "seo_social_image",
+                    "seo_noindex",
+                    "seo_canonical_url",
+                    "seo_snippet_preview",
+                )
+            },
+        ),
         (
             "آمار",
             {
@@ -211,6 +284,14 @@ class EditorialArticleAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    class Media:
+        js = ("editorial/seo-admin.js",)
+        css = {"all": ("editorial/seo-admin.css",)}
+
+    @admin.display(description="پیش‌نمایش نتیجه جستجو")
+    def seo_snippet_preview(self, obj: EditorialArticle | None) -> str:
+        return _seo_snippet_preview(obj)
 
     def has_change_permission(self, request, obj=None):
         if (

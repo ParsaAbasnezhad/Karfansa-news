@@ -5,3 +5,6 @@ class EditorialConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.editorial"
     verbose_name = "اخبار اختصاصی کارفنسا"
+
+    def ready(self) -> None:
+        from . import signals  # noqa: F401

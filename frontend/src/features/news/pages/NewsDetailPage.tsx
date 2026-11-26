@@ -21,7 +21,7 @@ export function NewsDetailPage() {
   usePageMeta(
     item ? `${item.title} | کارفنسا نیوز` : "خبر | کارفنسا نیوز",
     item?.summary || "جزئیات خبر در کارفنسا نیوز",
-    { type: item ? "article" : "website", image: item?.image_url },
+    { image: item?.image_url, robots: "noindex,follow" },
   );
 
   if (!valid) {

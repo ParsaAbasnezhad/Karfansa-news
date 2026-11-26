@@ -77,8 +77,14 @@ export function NewsListPage() {
   const showDesk = !topic && !query && page === 1;
 
   usePageMeta(
-    "اخبار تجارت و اقتصاد | کارفنسا",
-    "خبرهای اقتصادی، تجاری و صنعتی تأییدشده، با موضوع، منبع و زمان انتشار.",
+    topic ? `${topic} | کارفنسا نیوز` : "آخرین اخبار اقتصاد و تجارت | کارفنسا نیوز",
+    topic
+      ? `آخرین خبرهای ${topic} از منابع خبری، همراه با نام منبع و زمان انتشار.`
+      : "آخرین خبرهای اقتصادی، تجاری و صنعتی، همراه با نام منبع و زمان انتشار.",
+    {
+      canonicalPath: "/news",
+      robots: topic || query || page > 1 || ordering !== "-published_at" ? "noindex,follow" : "index,follow",
+    },
   );
 
   const replaceParams = (next: {

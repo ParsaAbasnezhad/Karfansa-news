@@ -1,0 +1,29 @@
+.editorial-seo-preview {
+  box-sizing: border-box;
+  max-width: 660px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color, #d9dce1);
+  border-radius: 8px;
+  background: var(--body-bg, #fff);
+  font: 14px/1.6 Arial, sans-serif;
+}
+
+.editorial-seo-preview__url,
+.editorial-seo-preview__title,
+.editorial-seo-preview__description {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.editorial-seo-preview__url { color: #188038; }
+.editorial-seo-preview__title { color: #1a0dab; font-size: 19px; font-weight: 400; }
+.editorial-seo-preview__description { color: var(--body-fg, #333); }
+.editorial-seo-preview small { color: var(--body-quiet-color, #666); }
+
+.editorial-seo-counter {
+  display: block;
+  margin-top: 4px;
+  color: var(--body-quiet-color, #666);
+}
+
+.editorial-seo-counter--over { color: #b3261e; }

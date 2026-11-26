@@ -27,6 +27,15 @@ The sender must verify SPF/DKIM/DMARC for production deliverability.
 
 ## SMS
 
+Set `SMS_BACKEND=console` with `DEBUG=True` for local development. The backend
+generates a cryptographically random six-digit OTP, logs it only to the
+development application/Celery log, and reports accepted delivery so its
+HMAC verifier and `delivered_at` are saved normally. The destination is masked.
+This backend makes no network requests and is rejected during Django startup
+when `DEBUG=False`. Do not enable console logging in a shared or production
+environment.
+
+For real delivery, use `SMS_BACKEND=provider` and configure:
 `SMS_PROVIDER_CLASS` may name a dotted Python class implementing
 `send_sms(*, destination: str, message: str) -> bool`. Adapters may also expose
 `send_verification_code(*, destination, code, purpose) -> bool` for template OTP
@@ -57,10 +66,10 @@ Without a configured provider class, production SMS delivery fails closed.
 Do not claim real SMS delivery works until credentials and a successful
 provider response are verified in the deployment environment.
 
-For local development only, `SMS_DEV_INBOX` may be set to a developer email
-address. With `DEBUG=True` and no provider class, an SMS preview is sent to
-that inbox via Django email. The preview does not send a real text message.
-The preview adapter is disabled in production regardless of the inbox value.
+For local development, `SMS_DEV_INBOX` may optionally be set to a developer
+email address to use the email-preview provider when `SMS_BACKEND=provider` and
+no SMS provider class is configured. The preview adapter is disabled in
+production regardless of the inbox value.
 
 Email and SMS submission acceptance does not guarantee eventual delivery to
 the recipient. A provider failure invalidates its challenge. Queued public

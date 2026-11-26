@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useHealth } from "@/hooks/use-health";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import { getErrorMessage } from "@/lib/errors";
 
 import styles from "./StatusPage.module.css";
 
 /** Minimal starter page proving the frontend can reach the backend. */
 export function StatusPage() {
+  usePageMeta("وضعیت سرویس | کارفنسا نیوز", undefined, { robots: "noindex,nofollow" });
   const { data, error, isPending, isFetching, refetch } = useHealth();
 
   return (

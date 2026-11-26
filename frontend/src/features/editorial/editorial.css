@@ -155,7 +155,10 @@
   font-size: 12px;
   margin-top: 12px;
 }
-.kfe-meta span + time::before {
+.kfe-meta a {
+  color: inherit;
+}
+.kfe-meta a + time::before {
   content: "•";
   margin-left: 10px;
   color: var(--kfe-accent);
@@ -584,16 +587,17 @@
   border-bottom: 1px solid var(--line);
   scrollbar-width: thin;
 }
-.kfe-categories button {
+.kfe-categories a {
   flex: none;
   border: 1px solid var(--line);
   background: var(--surface);
   padding: 6px 13px;
   font-size: 12px;
   font-weight: 650;
+  text-decoration: none;
 }
-.kfe-categories button.active,
-.kfe-categories button:hover {
+.kfe-categories a.active,
+.kfe-categories a:hover {
   color: #fff;
   background: var(--kfe-ink);
   border-color: var(--kfe-ink);

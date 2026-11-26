@@ -118,10 +118,11 @@ EMAIL_USE_SSL = env.bool("DJANGO_EMAIL_USE_SSL", default=False)
 EMAIL_TIMEOUT = env.int("DJANGO_EMAIL_TIMEOUT", default=10)
 DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL", default="Karfansa <no-reply@localhost>")
 
-# A production SMS integration must supply a dotted provider class that
-# implements SmsProvider. Without it, SMS requests fail closed. The dev inbox
-# previews SMS by email only while DEBUG=True.
+# SMS_BACKEND=console writes development codes to the application log and is
+# rejected when DEBUG=False. The provider backend fails closed if unconfigured.
+SMS_BACKEND = env("SMS_BACKEND", default="provider")
 SMS_PROVIDER_CLASS = env("SMS_PROVIDER_CLASS", default="")
+# Optional email preview for developers who prefer not to read SMS from logs.
 SMS_DEV_INBOX = env("SMS_DEV_INBOX", default="")
 # Kavenegar VerifyLookup adapter (apps.users.providers.kavenegar.KavenegarSmsProvider)
 KAVENEGAR_API_KEY = env("KAVENEGAR_API_KEY", default="")
@@ -138,6 +139,12 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = env("DJANGO_TIME_ZONE", default="UTC")
 USE_I18N = True
 USE_TZ = True
+
+# Canonical public identity is independent of the inbound Host header. Keep
+# verification values empty until the property owner configures them.
+SEO_SITE_URL = env("SEO_SITE_URL", default="https://karfansa.news.ir").rstrip("/")
+SEO_GOOGLE_VERIFICATION = env("SEO_GOOGLE_VERIFICATION", default="")
+SEO_VERIFIED_SOCIAL_URLS = env.list("SEO_VERIFIED_SOCIAL_URLS", default=[])
 
 # --- Static / media ---------------------------------------------------------
 STATIC_URL = "static/"

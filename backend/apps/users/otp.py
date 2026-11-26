@@ -21,11 +21,11 @@ from apps.common.client_ip import client_ip
 from apps.common.exceptions import AppError, RateLimitedError
 
 from .models import OTPChallenge, User
-from .notifications import send_otp
+from .notifications import OTP_TTL_SECONDS, send_otp
 
 logger = logging.getLogger(__name__)
 
-OTP_TTL = timedelta(minutes=5)
+OTP_TTL = timedelta(seconds=OTP_TTL_SECONDS)
 RESEND_COOLDOWN = timedelta(seconds=60)
 MAX_ATTEMPTS = 5
 
@@ -149,6 +149,7 @@ def issue_challenge(
         active.update(invalidated_at=now)
         challenge_id = uuid.uuid4()
         code = "" if async_delivery else f"{secrets.randbelow(1_000_000):06d}"
+
         challenge = OTPChallenge.objects.create(
             id=challenge_id,
             user=user,
@@ -205,7 +206,9 @@ def generate_and_dispatch_challenge(challenge_id: str) -> None:
             challenge.invalidated_at = now
             challenge.save(update_fields=["invalidated_at"])
             return
+
         code = f"{secrets.randbelow(1_000_000):06d}"
+
         try:
             send_otp(
                 destination=destination,

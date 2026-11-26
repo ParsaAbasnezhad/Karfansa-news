@@ -2,19 +2,18 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
 import { prefetchRoute } from "@/app/route-prefetch";
+import { LOGO } from "@/components/layout/logo";
 import { Icon } from "@/components/ui/Icon";
 import { InstallAppButton } from "@/components/ui/InstallAppButton";
 import { useHeadlines } from "@/features/news/hooks/use-news";
 import { useSession } from "@/features/auth/session";
 
-const LOGO = "/KARFANSA%20%E2%80%94%20Logo.svg";
-
 const NAV = [
   { to: "/", label: "صفحهٔ اصلی", end: true },
   { to: "/editorial", label: "اخبار اختصاصی", end: false },
-  { to: "/news", label: "اخبار", end: false },
-  { to: "/about", label: "درباره", end: true },
-  { to: "/contact", label: "تماس", end: true },
+  { to: "/news", label: "آخرین اخبار", end: false },
+  { to: "/about", label: "درباره ما", end: true },
+  { to: "/contact", label: "تماس با ما", end: true },
 ] as const;
 
 export function AppLayout() {
@@ -80,8 +79,8 @@ export function AppLayout() {
             <span>{today}</span>
           </p>
           <div className="links">
-            <Link to="/about">درباره</Link>
-            <Link to="/contact">تماس</Link>
+            <Link to="/about">درباره ما</Link>
+            <Link to="/contact">تماس با ما</Link>
             <Link to="/status">وضعیت سرویس</Link>
           </div>
         </div>
@@ -100,7 +99,7 @@ export function AppLayout() {
             <span className="sr-only">باز کردن منو</span>
           </button>
           <Link to="/" className="logo" aria-label="کارفنسا نیوز">
-            <img src={LOGO} alt="Karfansa" />
+            <img src={LOGO} alt="کارفنسا نیوز" />
           </Link>
           <form className="search" role="search" onSubmit={submitSearch}>
             <Icon name="search" />

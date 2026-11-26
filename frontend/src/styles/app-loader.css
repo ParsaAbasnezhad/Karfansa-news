@@ -1,0 +1,99 @@
+/* AppLoader: full-screen boot loader; PageSkeleton: lightweight local loading state. */
+
+.app-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--navy);
+  color: #fff;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.35s ease-out;
+}
+
+.app-loader.fade-out {
+  opacity: 0;
+}
+
+.app-loader__logo {
+  display: block;
+  height: 56px;
+  width: auto;
+  max-width: 92px;
+  object-fit: contain;
+}
+
+.app-loader__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.6;
+}
+
+.app-loader__bar {
+  position: relative;
+  width: 64px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.app-loader__bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--blue), var(--teal), transparent);
+  animation: app-loader-beam 1.4s ease-in-out infinite;
+}
+
+@keyframes app-loader-beam {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(280%);
+  }
+}
+
+.page-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.page-skeleton__bar {
+  height: 14px;
+}
+
+.page-skeleton__bar:first-child {
+  height: 22px;
+  width: 62%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loader {
+    transition: none;
+  }
+
+  .app-loader__bar::after {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-loader__logo {
+    height: 48px;
+  }
+
+  .app-loader__label {
+    font-size: 12.5px;
+  }
+}

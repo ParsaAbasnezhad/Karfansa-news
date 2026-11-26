@@ -1,49 +1,73 @@
 import { useEffect } from "react";
+
+import { canonicalUrl, SITE_NAME, SITE_ORIGIN } from "@/hooks/use-page-meta";
 import type { EditorialDetail } from "../types/editorial";
+
+const LOGO_URL = `${SITE_ORIGIN}/KARFANSA%20%E2%80%94%20Logo.svg`;
 
 export function useEditorialStructuredData(item?: EditorialDetail) {
   useEffect(() => {
     if (!item) return;
-    const canonical = `${window.location.origin}/editorial/${encodeURIComponent(item.slug)}`;
-    const image = item.featured_image_url
-      ? new URL(item.featured_image_url, window.location.origin).href
-      : undefined;
-    const graph = [
-      {
-        "@type": "NewsArticle",
-        headline: item.title,
-        description: item.seo_description || item.summary,
-        mainEntityOfPage: canonical,
-        datePublished: item.published_at,
-        dateModified: item.updated_at,
-        ...(image ? { image: [image] } : {}),
-        ...(item.author_name ? { author: { "@type": "Person", name: item.author_name } } : {}),
-        publisher: { "@type": "Organization", name: "کارفنسا" },
-        ...(item.category ? { articleSection: item.category.name } : {}),
-        ...(item.tags.length > 0 ? { keywords: item.tags.join(", ") } : {}),
+    const existing = document.querySelector<HTMLScriptElement>("#seo-jsonld");
+    if (item.seo_noindex) {
+      existing?.remove();
+      return;
+    }
+
+    const articleUrl = canonicalUrl(`/editorial/${encodeURIComponent(item.slug)}`, item.seo_canonical_url);
+    const imagePath = item.seo_social_image_url || item.featured_image_url;
+    const imageUrl = imagePath ? new URL(imagePath, SITE_ORIGIN).href : undefined;
+    const article = {
+      "@type": item.source_url || item.source_name ? "Article" : "NewsArticle",
+      "@id": `${articleUrl}#article`,
+      headline: item.title,
+      description: item.seo_description || item.summary,
+      mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+      datePublished: item.published_at,
+      dateModified: item.updated_at,
+      inLanguage: "fa-IR",
+      ...(imageUrl ? { image: [imageUrl] } : {}),
+      ...(item.author_name
+        ? {
+            author: {
+              "@type": "Person",
+              name: item.author_name,
+              ...(item.author_id ? { url: `${SITE_ORIGIN}/authors/${item.author_id}` } : {}),
+            },
+          }
+        : {}),
+      publisher: {
+        "@type": "NewsMediaOrganization",
+        "@id": `${SITE_ORIGIN}/#organization`,
+        name: SITE_NAME,
+        url: `${SITE_ORIGIN}/`,
+        logo: { "@type": "ImageObject", url: LOGO_URL },
       },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "صفحه اصلی", item: window.location.origin },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "اخبار اختصاصی کارفنسا",
-            item: `${window.location.origin}/editorial`,
-          },
-          { "@type": "ListItem", position: 3, name: item.title, item: canonical },
-        ],
-      },
-    ];
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.dataset.editorialStructuredData = "true";
-    script.textContent = JSON.stringify({
+      ...(item.category ? { articleSection: item.category.name } : {}),
+      ...(item.tags.length ? { keywords: item.tags.join(", ") } : {}),
+      ...(item.source_url ? { isBasedOn: item.source_url } : {}),
+    };
+    const graph = {
       "@context": "https://schema.org",
-      "@graph": graph,
-    }).replace(/</g, "\\u003c");
-    document.head.appendChild(script);
+      "@graph": [
+        article,
+        {
+          "@type": "BreadcrumbList",
+          "@id": `${articleUrl}#breadcrumb`,
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "صفحه اصلی", item: `${SITE_ORIGIN}/` },
+            { "@type": "ListItem", position: 2, name: "اخبار اختصاصی", item: `${SITE_ORIGIN}/editorial` },
+            { "@type": "ListItem", position: 3, name: item.title, item: articleUrl },
+          ],
+        },
+      ],
+    };
+
+    const script = existing ?? document.createElement("script");
+    script.id = "seo-jsonld";
+    script.type = "application/ld+json";
+    script.textContent = JSON.stringify(graph).replace(/</g, "\\u003c");
+    if (!existing) document.head.appendChild(script);
     return () => script.remove();
   }, [item]);
 }

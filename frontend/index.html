@@ -1,21 +1,101 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="fa-IR" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/KARFANSA%20%E2%80%94%20Logo.svg" />
     <meta name="theme-color" content="#112a43" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="کارفنسا نیوز؛ اخبار اقتصادی و تجاری از منابع RSS" />
+    <meta name="description" content="کارفنسا نیوز، رسانه خبری و تحلیلی اقتصاد، تجارت، صادرات، واردات، صنایع و بازارهای جهانی." />
+    <meta name="robots" content="index,follow" />
+    <meta name="googlebot" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://karfansa.news.ir/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fa_IR" />
+    <meta property="og:site_name" content="کارفنسا نیوز" />
+    <meta property="og:title" content="کارفنسا نیوز | اخبار اقتصادی، تجارت و بازارهای جهانی" />
+    <meta property="og:description" content="کارفنسا نیوز، رسانه خبری و تحلیلی اقتصاد، تجارت، صادرات، واردات، صنایع و بازارهای جهانی." />
+    <meta property="og:url" content="https://karfansa.news.ir/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="کارفنسا نیوز | اخبار اقتصادی، تجارت و بازارهای جهانی" />
+    <meta name="twitter:description" content="کارفنسا نیوز، رسانه خبری و تحلیلی اقتصاد، تجارت، صادرات، واردات، صنایع و بازارهای جهانی." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <title>کارفنسا نیوز</title>
+    <title>کارفنسا نیوز | اخبار اقتصادی، تجارت و بازارهای جهانی</title>
+    <style>
+      /* Pre-React screen: mirrors .app-loader in src/styles/app-loader.css, with brand colors inlined. */
+      .app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #142b43;
+        color: #fff;
+        pointer-events: none;
+      }
+      .app-loader__logo {
+        display: block;
+        height: 56px;
+        width: auto;
+        max-width: 92px;
+        object-fit: contain;
+      }
+      .app-loader__label {
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.72);
+        line-height: 1.6;
+      }
+      .app-loader__bar {
+        position: relative;
+        width: 64px;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .app-loader__bar::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, #275c79, #38776c, transparent);
+        animation: app-loader-beam 1.4s ease-in-out infinite;
+      }
+      @keyframes app-loader-beam {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(280%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .app-loader__bar::after {
+          animation: none;
+        }
+      }
+      @media (max-width: 640px) {
+        .app-loader__logo {
+          height: 48px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-loader" role="status">
+        <img class="app-loader__logo" src="/KARFANSA%20%E2%80%94%20Logo.svg" alt="Karfansa" />
+        <span class="app-loader__label">در حال بارگذاری</span>
+        <span class="app-loader__bar" aria-hidden="true"></span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
